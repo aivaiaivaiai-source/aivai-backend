@@ -1,0 +1,26 @@
+# AiVai TTS cleanup — Docker Compose override example (NOT merged automatically)
+#
+# One-off cleanup sharing the app image and a media volume.
+# Does NOT start with `docker compose up` unless you use profile `cleanup`.
+#
+# Run manually:
+#   docker compose -f docker-compose.yml \
+#     -f docs/deployment/tts-cleanup-docker-compose.override.example.yml \
+#     --profile cleanup run --rm tts-cleanup
+#
+services:
+  tts-cleanup:
+    profiles: ["cleanup"]
+    build: .
+    env_file:
+      - .env
+    environment:
+      POSTGRES_SERVER: db
+      TTS_AUDIO_TTL_HOURS: ${TTS_AUDIO_TTL_HOURS:-24}
+    volumes:
+      # Mount host media dir so cleanup sees the same files as the API
+      - ./media:/app/media
+    command: python -m scripts.cleanup_tts_audio
+    depends_on:
+      db:
+        condition: service_healthy

@@ -1,0 +1,21 @@
+# AiVai TTS cleanup — systemd timer (daily)
+#
+# Install:
+#   sudo cp tts-cleanup-systemd.timer.example /etc/systemd/system/aivai-tts-cleanup.timer
+#   sudo systemctl enable --now aivai-tts-cleanup.timer
+#
+# Requires aivai-tts-cleanup.service (see tts-cleanup-systemd.service.example).
+
+[Unit]
+Description=Run AiVai TTS audio cleanup daily
+Documentation=file:///opt/aivai/aivai_backend/docs/deployment/tts-cleanup.md
+Requires=aivai-tts-cleanup.service
+
+[Timer]
+# Once per day at 03:15 (server local time). Adjust as needed.
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+AccuracySec=15min
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,35 @@
+# AiVai TTS cleanup — systemd oneshot service
+#
+# Install:
+#   sudo cp tts-cleanup-systemd.service.example /etc/systemd/system/aivai-tts-cleanup.service
+#   sudo systemctl daemon-reload
+#
+# Edit paths below to match your deployment.
+
+[Unit]
+Description=AiVai TTS audio cleanup (media/tts/*.mp3)
+Documentation=file:///opt/aivai/aivai_backend/docs/deployment/tts-cleanup.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=aivai
+Group=aivai
+WorkingDirectory=/opt/aivai/aivai_backend
+
+# Same .env as the API (MEDIA_ROOT, TTS_AUDIO_TTL_HOURS)
+EnvironmentFile=-/opt/aivai/aivai_backend/.env
+
+# Use project venv Python
+ExecStart=/opt/aivai/aivai_backend/.venv/bin/python -m scripts.cleanup_tts_audio
+
+# Optional: override TTL without editing .env
+# ExecStart=/opt/aivai/aivai_backend/.venv/bin/python -m scripts.cleanup_tts_audio --ttl-hours 24
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aivai-tts-cleanup
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aivai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-aivai}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aivai} -d ${POSTGRES_DB:-aivai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aivai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-aivai}
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: "5432"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

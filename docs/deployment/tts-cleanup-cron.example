@@ -1,0 +1,15 @@
+# AiVai TTS cleanup — cron example
+#
+# Edit paths and user, then install with: crontab -e
+#
+# Runs daily at 03:15, from backend project root, appends logs.
+# Uses the same .env as the API (source optional if python loads .env via pydantic-settings).
+
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# minute hour day month weekday
+15 3 * * * cd /opt/aivai/aivai_backend && /opt/aivai/aivai_backend/.venv/bin/python -m scripts.cleanup_tts_audio >> /var/log/aivai/tts-cleanup.log 2>&1
+
+# Optional explicit TTL:
+# 15 3 * * * cd /opt/aivai/aivai_backend && /opt/aivai/aivai_backend/.venv/bin/python -m scripts.cleanup_tts_audio --ttl-hours 24 >> /var/log/aivai/tts-cleanup.log 2>&1

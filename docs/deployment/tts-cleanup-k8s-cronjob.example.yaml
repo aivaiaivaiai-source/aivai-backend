@@ -1,0 +1,64 @@
+# AiVai TTS cleanup — Kubernetes CronJob example (NOT applied automatically)
+#
+# Replace:
+#   - namespace
+#   - image (same as API deployment)
+#   - volume mounts for MEDIA_ROOT (must match API pod storage)
+#   - secret/configMap for env
+#
+# Apply:
+#   kubectl apply -f docs/deployment/tts-cleanup-k8s-cronjob.example.yaml
+#
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aivai-tts-cleanup
+  namespace: aivai
+  labels:
+    app: aivai
+    component: tts-cleanup
+spec:
+  # Daily at 03:15 UTC
+  schedule: "15 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: aivai
+            component: tts-cleanup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: tts-cleanup
+              image: your-registry/aivai-backend:latest
+              imagePullPolicy: IfNotPresent
+              workingDir: /app
+              command:
+                - python
+                - -m
+                - scripts.cleanup_tts_audio
+              envFrom:
+                - secretRef:
+                    name: aivai-backend-env
+              # env:
+              #   - name: TTS_AUDIO_TTL_HOURS
+              #     value: "24"
+              volumeMounts:
+                - name: media
+                  mountPath: /app/media
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+          volumes:
+            - name: media
+              persistentVolumeClaim:
+                claimName: aivai-media-pvc

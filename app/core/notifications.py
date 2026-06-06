@@ -1,0 +1,1 @@
+NOTIFICATION_TYPE_SAVED_SEARCH_MATCH = "saved_search_match"
