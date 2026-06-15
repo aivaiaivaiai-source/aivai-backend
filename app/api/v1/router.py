@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     notifications,
     saved_searches,
     users,
+    vehicles,
     voice,
 )
 
@@ -33,6 +34,7 @@ api_router.include_router(
     tags=["media"],
 )
 api_router.include_router(categories.router, prefix="/categories", tags=["categories"])
+api_router.include_router(vehicles.router, prefix="/vehicles", tags=["vehicles"])
 api_router.include_router(
     category_intelligence.router,
     prefix="/categories/intelligence",

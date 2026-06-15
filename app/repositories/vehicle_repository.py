@@ -21,6 +21,15 @@ class VehicleBrandRepository(BaseRepository[VehicleBrand]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def list_enabled(self) -> list[VehicleBrand]:
+        stmt = (
+            select(VehicleBrand)
+            .where(VehicleBrand.is_enabled.is_(True))
+            .order_by(VehicleBrand.name)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
 
 class VehicleModelRepository(BaseRepository[VehicleModel]):
     def __init__(self, session: AsyncSession) -> None:
@@ -34,6 +43,18 @@ class VehicleModelRepository(BaseRepository[VehicleModel]):
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def list_by_brand_id(self, brand_id: int) -> list[VehicleModel]:
+        stmt = (
+            select(VehicleModel)
+            .where(
+                VehicleModel.brand_id == brand_id,
+                VehicleModel.is_enabled.is_(True),
+            )
+            .order_by(VehicleModel.name)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
 
 
 class VehicleAliasRepository(BaseRepository[VehicleAlias]):

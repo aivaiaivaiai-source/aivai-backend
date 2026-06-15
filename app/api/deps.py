@@ -19,7 +19,11 @@ from app.repositories.category_alias_repository import CategoryAliasRepository
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.category_moderation_rule_repository import CategoryModerationRuleRepository
 from app.repositories.category_routing_rule_repository import CategoryRoutingRuleRepository
-from app.repositories.vehicle_repository import VehicleAliasRepository
+from app.repositories.vehicle_repository import (
+    VehicleAliasRepository,
+    VehicleBrandRepository,
+    VehicleModelRepository,
+)
 from app.repositories.health_repository import HealthRepository
 from app.repositories.listing_repository import ListingRepository
 from app.repositories.message_repository import MessageRepository
@@ -46,6 +50,7 @@ from app.services.saved_search_service import SavedSearchService
 from app.services.speech_to_text_service import SpeechToTextService, WhisperSpeechToTextService
 from app.services.storage_service import StorageService
 from app.services.user_service import UserService
+from app.services.vehicle_catalog_service import VehicleCatalogService
 from app.services.voice_service import VoiceService
 
 
@@ -146,6 +151,13 @@ def get_media_service(session: AsyncSession = Depends(get_db)) -> MediaService:
 
 def get_category_service(session: AsyncSession = Depends(get_db)) -> CategoryService:
     return CategoryService(CategoryRepository(session))
+
+
+def get_vehicle_catalog_service(session: AsyncSession = Depends(get_db)) -> VehicleCatalogService:
+    return VehicleCatalogService(
+        VehicleBrandRepository(session),
+        VehicleModelRepository(session),
+    )
 
 
 def get_category_intelligence_service(

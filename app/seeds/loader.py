@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.locale import DEFAULT_LOCALE
 from app.models.category import Category
 from app.models.category_alias import CategoryAlias
-from app.models.category_enums import CategoryRuleType, ModerationAction, VehicleAliasTarget
+from app.models.category_enums import CategoryRuleType, ModerationAction, VehicleAliasTarget, VehicleType
 from app.models.category_field import CategoryCoreField, CategoryOptionalField
 from app.models.category_filter import CategoryFilter
 from app.models.category_rule import CategoryRule
@@ -24,6 +24,8 @@ from app.seeds.category_data import (
     SEARCH_FILTERS,
     SUBCATEGORIES,
 )
+from app.seeds.mobile_category_skeleton import MOBILE_CATEGORY_SKELETON
+from app.seeds.mobile_vehicle_catalog import MOBILE_VEHICLE_BRANDS, MOBILE_VEHICLE_MODELS
 from app.seeds.vehicle_data import BRAND_ALIASES, BRANDS, MODEL_ALIASES, MODELS
 from app.services.category_text import normalize_alias_keys
 
@@ -41,7 +43,8 @@ class CategorySeedLoader:
 
     async def run(self) -> dict[str, int]:
         await self._seed_categories()
-        await self._seed_aliases()
+        mobile_stats = await self._seed_mobile_skeleton()
+        alias_stats = await self._seed_aliases()
         await self._seed_fields()
         await self._seed_filters()
         await self._seed_rules()
@@ -49,10 +52,58 @@ class CategorySeedLoader:
         await self._session.commit()
         return {
             "categories": len(self._slug_to_id),
+            "mobile_skeleton_added": mobile_stats["added"],
+            "mobile_skeleton_skipped": mobile_stats["skipped"],
+            "category_aliases_added": alias_stats["added"],
+            "category_aliases_updated": alias_stats["updated"],
+            "category_aliases_conflicts": alias_stats["conflicts"],
             "vehicle_brands": v_stats["brands"],
             "vehicle_models": v_stats["models"],
-            "vehicle_aliases": v_stats["aliases"],
+            "mobile_vehicle_brands_added": v_stats["mobile_brands_added"],
+            "mobile_vehicle_models_added": v_stats["mobile_models_added"],
+            "vehicle_aliases_added": v_stats["aliases_added"],
+            "vehicle_aliases_updated": v_stats["aliases_updated"],
+            "vehicle_aliases_conflicts": v_stats["aliases_conflicts"],
         }
+
+    async def _seed_mobile_skeleton(self) -> dict[str, int]:
+        """Seed mobile v2 category tree (L2/L3) without removing legacy categories."""
+        existing = await self._session.execute(select(Category.slug, Category.id))
+        for slug, cat_id in existing.all():
+            self._slug_to_id.setdefault(slug, cat_id)
+
+        pending = list(MOBILE_CATEGORY_SKELETON)
+        added = 0
+        skipped = 0
+        max_passes = 8
+        for _ in range(max_passes):
+            if not pending:
+                break
+            next_pending: list[tuple] = []
+            for parent_slug, slug, name, entity_type, sort_order in pending:
+                if slug in self._slug_to_id:
+                    skipped += 1
+                    continue
+                parent_id = self._slug_to_id.get(parent_slug)
+                if parent_id is None:
+                    next_pending.append((parent_slug, slug, name, entity_type, sort_order))
+                    continue
+                await self._upsert_category(
+                    slug=slug,
+                    name=name,
+                    entity_type=entity_type,
+                    sort_order=sort_order,
+                    parent_id=parent_id,
+                    hint=None,
+                )
+                added += 1
+            pending = next_pending
+        if pending:
+            logger.warning(
+                "Mobile skeleton: %d categories not seeded (missing parent slugs)",
+                len(pending),
+            )
+        return {"added": added, "skipped": skipped}
 
     async def _seed_categories(self) -> None:
         for slug, name, entity_type, sort_order in ROOT_CATEGORIES:
@@ -110,36 +161,80 @@ class CategorySeedLoader:
                 row.ai_dialogue_hint = hint
         self._slug_to_id[slug] = row.id
 
-    async def _seed_aliases(self) -> None:
+    async def _seed_aliases(self) -> dict[str, int]:
+        id_to_slug = {cat_id: slug for slug, cat_id in self._slug_to_id.items()}
+        added = 0
+        updated = 0
+        conflicts = 0
+        # Pending INSERTs are invisible to SELECT until flush — track within this run.
+        seen: dict[tuple[str, str], tuple[int, CategoryAlias | None]] = {}
+
         for cat_slug, aliases in CATEGORY_ALIASES.items():
             cat_id = self._slug_to_id.get(cat_slug)
             if cat_id is None:
                 continue
             for alias in aliases:
                 spaced, compact = normalize_alias_keys(alias)
+                key = (spaced, self._locale)
+
+                if key in seen:
+                    existing_cat_id, existing_row = seen[key]
+                    if existing_cat_id == cat_id:
+                        if existing_row is not None:
+                            existing_row.alias = alias
+                            existing_row.alias_compact = compact
+                            existing_row.weight = 100
+                            existing_row.is_enabled = True
+                        updated += 1
+                    else:
+                        existing_slug = id_to_slug.get(existing_cat_id, str(existing_cat_id))
+                        logger.warning(
+                            "[SeedAliases] conflict alias=%s existing_category=%s new_category=%s skipped",
+                            alias,
+                            existing_slug,
+                            cat_slug,
+                        )
+                        conflicts += 1
+                    continue
+
                 stmt = select(CategoryAlias).where(
-                    CategoryAlias.category_id == cat_id,
                     CategoryAlias.alias_normalized == spaced,
                     CategoryAlias.locale == self._locale,
                 )
                 row = (await self._session.execute(stmt)).scalar_one_or_none()
                 if row is None:
-                    self._session.add(
-                        CategoryAlias(
-                            category_id=cat_id,
-                            alias=alias,
-                            alias_normalized=spaced,
-                            alias_compact=compact,
-                            locale=self._locale,
-                            weight=100,
-                            is_enabled=True,
-                        )
+                    new_row = CategoryAlias(
+                        category_id=cat_id,
+                        alias=alias,
+                        alias_normalized=spaced,
+                        alias_compact=compact,
+                        locale=self._locale,
+                        weight=100,
+                        is_enabled=True,
                     )
-                else:
+                    self._session.add(new_row)
+                    seen[key] = (cat_id, new_row)
+                    added += 1
+                elif row.category_id == cat_id:
                     row.alias = alias
                     row.alias_compact = compact
                     row.weight = 100
                     row.is_enabled = True
+                    seen[key] = (cat_id, row)
+                    updated += 1
+                else:
+                    existing_slug = id_to_slug.get(row.category_id, str(row.category_id))
+                    logger.warning(
+                        "[SeedAliases] conflict alias=%s existing_category=%s new_category=%s skipped",
+                        alias,
+                        existing_slug,
+                        cat_slug,
+                    )
+                    seen[key] = (row.category_id, row)
+                    conflicts += 1
+
+        await self._session.flush()
+        return {"added": added, "updated": updated, "conflicts": conflicts}
 
     async def _seed_fields(self) -> None:
         for cat_slug, fields in CORE_FIELDS.items():
@@ -274,10 +369,87 @@ class CategorySeedLoader:
             row.config = config
             row.is_active = True
 
+    @staticmethod
+    def _same_vehicle_alias_entity(
+        row: VehicleAlias,
+        brand_id: int,
+        model_id: int | None,
+        target: VehicleAliasTarget,
+    ) -> bool:
+        return (
+            row.brand_id == brand_id
+            and row.model_id == model_id
+            and row.target_type == target
+        )
+
+    @staticmethod
+    def _format_vehicle_alias_entity(
+        brand_id: int | None,
+        model_id: int | None,
+        target: VehicleAliasTarget,
+        id_to_brand_slug: dict[int, str],
+        id_to_model_key: dict[int, tuple[str, str]],
+    ) -> str:
+        brand_slug = id_to_brand_slug.get(brand_id or 0, str(brand_id))
+        if target == VehicleAliasTarget.model and model_id is not None:
+            brand_slug, model_slug = id_to_model_key.get(model_id, (brand_slug, str(model_id)))
+            return f"model:{brand_slug}/{model_slug}"
+        return f"brand:{brand_slug}"
+
+    async def _seed_mobile_vehicle_catalog(self, brand_ids: dict[str, int]) -> dict[str, int]:
+        brands_added = 0
+        models_added = 0
+
+        for slug, name in MOBILE_VEHICLE_BRANDS:
+            if slug in brand_ids:
+                continue
+            stmt = select(VehicleBrand).where(VehicleBrand.slug == slug)
+            row = (await self._session.execute(stmt)).scalar_one_or_none()
+            if row is None:
+                row = VehicleBrand(
+                    slug=slug,
+                    name=name,
+                    country_origin=None,
+                    vehicle_type=VehicleType.car,
+                    is_enabled=True,
+                )
+                self._session.add(row)
+                await self._session.flush()
+                brands_added += 1
+            brand_ids[slug] = row.id
+
+        for brand_slug, models in MOBILE_VEHICLE_MODELS.items():
+            brand_id = brand_ids.get(brand_slug)
+            if brand_id is None:
+                continue
+            for model_slug, model_name in models:
+                stmt = select(VehicleModel).where(
+                    VehicleModel.brand_id == brand_id,
+                    VehicleModel.slug == model_slug,
+                )
+                row = (await self._session.execute(stmt)).scalar_one_or_none()
+                if row is None:
+                    self._session.add(
+                        VehicleModel(
+                            brand_id=brand_id,
+                            slug=model_slug,
+                            name=model_name,
+                            is_enabled=True,
+                        )
+                    )
+                    models_added += 1
+                else:
+                    row.name = model_name
+                    row.is_enabled = True
+
+        return {"brands_added": brands_added, "models_added": models_added}
+
     async def _seed_vehicles(self) -> dict[str, int]:
         brand_ids: dict[str, int] = {}
         model_count = 0
-        alias_count = 0
+        aliases_added = 0
+        aliases_updated = 0
+        aliases_conflicts = 0
 
         for slug, name, country, vtype in BRANDS:
             stmt = select(VehicleBrand).where(VehicleBrand.slug == slug)
@@ -323,39 +495,70 @@ class CategorySeedLoader:
                     row.name = model_name
                     row.is_enabled = True
 
+        mobile_stats = await self._seed_mobile_vehicle_catalog(brand_ids)
+        model_count += mobile_stats["models_added"]
+
         await self._session.flush()
 
         model_key_to_id: dict[tuple[str, str], int] = {}
-        for brand_slug in MODELS:
-            brand_id = brand_ids[brand_slug]
+        for brand_slug, brand_id in brand_ids.items():
             res = await self._session.execute(
                 select(VehicleModel).where(VehicleModel.brand_id == brand_id)
             )
             for m in res.scalars().all():
                 model_key_to_id[(brand_slug, m.slug)] = m.id
 
+        id_to_brand_slug = {brand_id: slug for slug, brand_id in brand_ids.items()}
+        id_to_model_key = {model_id: key for key, model_id in model_key_to_id.items()}
+        vehicle_alias_seen: dict[tuple[str, str], VehicleAlias] = {}
+
         for alias, brand_slug, target in BRAND_ALIASES:
-            alias_count += await self._upsert_vehicle_alias(
+            result = await self._upsert_vehicle_alias(
                 alias,
                 brand_ids[brand_slug],
                 None,
                 target,
-                model_key_to_id,
+                vehicle_alias_seen,
+                id_to_brand_slug,
+                id_to_model_key,
             )
+            if result == "added":
+                aliases_added += 1
+            elif result == "updated":
+                aliases_updated += 1
+            else:
+                aliases_conflicts += 1
 
         for alias, brand_slug, model_slug in MODEL_ALIASES:
             model_id = model_key_to_id.get((brand_slug, model_slug))
             if model_id is None:
                 continue
-            alias_count += await self._upsert_vehicle_alias(
+            result = await self._upsert_vehicle_alias(
                 alias,
                 brand_ids[brand_slug],
                 model_id,
                 VehicleAliasTarget.model,
-                model_key_to_id,
+                vehicle_alias_seen,
+                id_to_brand_slug,
+                id_to_model_key,
             )
+            if result == "added":
+                aliases_added += 1
+            elif result == "updated":
+                aliases_updated += 1
+            else:
+                aliases_conflicts += 1
 
-        return {"brands": len(brand_ids), "models": model_count, "aliases": alias_count}
+        await self._session.flush()
+        return {
+            "brands": len(brand_ids),
+            "models": model_count,
+            "mobile_brands_added": mobile_stats["brands_added"],
+            "mobile_models_added": mobile_stats["models_added"],
+            "aliases_added": aliases_added,
+            "aliases_updated": aliases_updated,
+            "aliases_conflicts": aliases_conflicts,
+        }
 
     async def _upsert_vehicle_alias(
         self,
@@ -363,32 +566,67 @@ class CategorySeedLoader:
         brand_id: int,
         model_id: int | None,
         target: VehicleAliasTarget,
-        model_key_to_id: dict,
-    ) -> int:
+        seen: dict[tuple[str, str], VehicleAlias],
+        id_to_brand_slug: dict[int, str],
+        id_to_model_key: dict[int, tuple[str, str]],
+    ) -> str:
         spaced, compact = normalize_alias_keys(alias)
+        key = (compact, self._locale)
+        new_entity = self._format_vehicle_alias_entity(
+            brand_id, model_id, target, id_to_brand_slug, id_to_model_key
+        )
+
+        if key in seen:
+            row = seen[key]
+            if self._same_vehicle_alias_entity(row, brand_id, model_id, target):
+                row.alias = alias
+                row.alias_normalized = spaced
+                row.is_enabled = True
+                return "updated"
+            existing_entity = self._format_vehicle_alias_entity(
+                row.brand_id, row.model_id, row.target_type, id_to_brand_slug, id_to_model_key
+            )
+            logger.warning(
+                "[SeedVehicleAliases] conflict alias=%s existing=%s new=%s skipped",
+                alias,
+                existing_entity,
+                new_entity,
+            )
+            return "conflict"
+
         stmt = select(VehicleAlias).where(
             VehicleAlias.alias_compact == compact,
             VehicleAlias.locale == self._locale,
         )
         row = (await self._session.execute(stmt)).scalar_one_or_none()
         if row is None:
-            self._session.add(
-                VehicleAlias(
-                    alias=alias,
-                    alias_normalized=spaced,
-                    alias_compact=compact,
-                    target_type=target,
-                    brand_id=brand_id,
-                    model_id=model_id,
-                    locale=self._locale,
-                    is_enabled=True,
-                )
+            new_row = VehicleAlias(
+                alias=alias,
+                alias_normalized=spaced,
+                alias_compact=compact,
+                target_type=target,
+                brand_id=brand_id,
+                model_id=model_id,
+                locale=self._locale,
+                is_enabled=True,
             )
-            return 1
-        row.alias = alias
-        row.alias_normalized = spaced
-        row.brand_id = brand_id
-        row.model_id = model_id
-        row.target_type = target
-        row.is_enabled = True
-        return 0
+            self._session.add(new_row)
+            seen[key] = new_row
+            return "added"
+        if self._same_vehicle_alias_entity(row, brand_id, model_id, target):
+            row.alias = alias
+            row.alias_normalized = spaced
+            row.is_enabled = True
+            seen[key] = row
+            return "updated"
+        existing_entity = self._format_vehicle_alias_entity(
+            row.brand_id, row.model_id, row.target_type, id_to_brand_slug, id_to_model_key
+        )
+        logger.warning(
+            "[SeedVehicleAliases] conflict alias=%s existing=%s new=%s skipped",
+            alias,
+            existing_entity,
+            new_entity,
+        )
+        seen[key] = row
+        return "conflict"
