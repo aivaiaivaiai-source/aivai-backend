@@ -37,6 +37,8 @@ class Settings(BaseSettings):
 
     TTS_AUDIO_TTL_HOURS: int = 24
 
+    CATEGORY_SNAPSHOT_TTL_SECONDS: int = 60
+
     @computed_field
     @property
     def DATABASE_URL(self) -> str:

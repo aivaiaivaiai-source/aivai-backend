@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
 from app.core.ai_global_rules import GLOBAL_AI_RULES
+from app.core.config import get_settings
 from app.core.locale import DEFAULT_LOCALE, normalize_locale
 from app.models.category_enums import CategoryRuleType
 from app.repositories.category_alias_repository import CategoryAliasRepository
@@ -13,6 +16,8 @@ from app.repositories.category_repository import CategoryRepository
 from app.repositories.category_rule_repository import CategoryRuleRepository
 from app.repositories.vehicle_repository import VehicleAliasRepository
 from app.services.category_text import normalize_alias_compact, normalize_text
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -82,10 +87,83 @@ class CategoryIntelligenceSnapshot:
     locale: str = DEFAULT_LOCALE.value
 
 
-class CategorySnapshotProvider:
-    """In-memory TTL cache for routing/moderation dictionaries (no Redis)."""
+@dataclass
+class _ProcessCacheEntry:
+    snapshot: CategoryIntelligenceSnapshot
+    loaded_at: float
 
-    _TTL_SECONDS = 60.0
+
+class _ProcessSnapshotCache:
+    """Process-wide TTL cache shared across HTTP requests (no Redis)."""
+
+    def __init__(self) -> None:
+        self._entries: dict[str, _ProcessCacheEntry] = {}
+        self._locks: dict[str, asyncio.Lock] = {}
+        self._meta_lock = asyncio.Lock()
+
+    async def _lock_for(self, locale: str) -> asyncio.Lock:
+        async with self._meta_lock:
+            lock = self._locks.get(locale)
+            if lock is None:
+                lock = asyncio.Lock()
+                self._locks[locale] = lock
+            return lock
+
+    def invalidate(self, locale: str | None = None) -> None:
+        if locale is None:
+            self._entries.clear()
+            return
+        self._entries.pop(locale, None)
+
+    async def get(
+        self,
+        locale: str,
+        ttl_seconds: float,
+        loader: Callable[[], Awaitable[CategoryIntelligenceSnapshot]],
+    ) -> CategoryIntelligenceSnapshot:
+        now = time.monotonic()
+        entry = self._entries.get(locale)
+        if entry is not None and (now - entry.loaded_at) < ttl_seconds:
+            return entry.snapshot
+
+        lock = await self._lock_for(locale)
+        async with lock:
+            now = time.monotonic()
+            entry = self._entries.get(locale)
+            if entry is not None and (now - entry.loaded_at) < ttl_seconds:
+                return entry.snapshot
+
+            try:
+                snapshot = await loader()
+            except Exception:
+                stale = self._entries.get(locale)
+                if stale is not None:
+                    logger.warning(
+                        "Category snapshot reload failed; serving stale cache "
+                        "for locale=%s",
+                        locale,
+                        exc_info=True,
+                    )
+                    return stale.snapshot
+                raise
+
+            self._entries[locale] = _ProcessCacheEntry(
+                snapshot=snapshot,
+                loaded_at=time.monotonic(),
+            )
+            return snapshot
+
+
+_PROCESS_SNAPSHOT_CACHE = _ProcessSnapshotCache()
+
+
+def reset_process_snapshot_cache() -> None:
+    """Clear all process-level snapshot entries (tests / admin hooks)."""
+    _PROCESS_SNAPSHOT_CACHE.invalidate()
+
+
+class CategorySnapshotProvider:
+    """Loads routing/moderation dictionaries with a shared process-level TTL cache."""
 
     def __init__(
         self,
@@ -103,22 +181,17 @@ class CategorySnapshotProvider:
         self._moderation_rules = moderation_rule_repository
         self._vehicle_aliases = vehicle_alias_repository
         self._locale = normalize_locale(locale)
-        self._cache: CategoryIntelligenceSnapshot | None = None
-        self._loaded_at: float = 0.0
-        self._lock = asyncio.Lock()
 
     def invalidate(self) -> None:
-        self._cache = None
-        self._loaded_at = 0.0
+        _PROCESS_SNAPSHOT_CACHE.invalidate(self._locale)
 
     async def get(self) -> CategoryIntelligenceSnapshot:
-        async with self._lock:
-            now = time.monotonic()
-            if self._cache is not None and (now - self._loaded_at) < self._TTL_SECONDS:
-                return self._cache
-            self._cache = await self._load()
-            self._loaded_at = now
-            return self._cache
+        ttl = float(get_settings().CATEGORY_SNAPSHOT_TTL_SECONDS)
+        return await _PROCESS_SNAPSHOT_CACHE.get(
+            self._locale,
+            ttl,
+            self._load,
+        )
 
     async def _load(self) -> CategoryIntelligenceSnapshot:
         snap = CategoryIntelligenceSnapshot(locale=self._locale)
