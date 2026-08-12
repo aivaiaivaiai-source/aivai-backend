@@ -50,6 +50,7 @@ media/
 uploads/
 
 # Database dumps
+backups/
 *.sql
 *.dump
 *.backup
