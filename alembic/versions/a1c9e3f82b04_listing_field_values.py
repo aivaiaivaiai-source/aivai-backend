@@ -1,7 +1,7 @@
 """listing field values storage
 
 Revision ID: a1c9e3f82b04
-Revises: e6a1c34d8f03
+Revises: f7a2b34c8d01
 Create Date: 2026-08-12
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "a1c9e3f82b04"
-down_revision: Union[str, None] = "e6a1c34d8f03"
+down_revision: Union[str, None] = "f7a2b34c8d01"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
