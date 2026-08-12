@@ -76,7 +76,7 @@ class _ListingStub:
     def __init__(self) -> None:
         self.created: list[dict[str, Any]] = []
 
-    async def create_listing(self, body, owner_id: int):
+    async def create_listing(self, body, owner_id: int, **kwargs: Any):
         self.created.append({"body": body, "owner_id": owner_id})
 
         class _Created:

@@ -25,6 +25,7 @@ from app.repositories.vehicle_repository import (
     VehicleModelRepository,
 )
 from app.repositories.health_repository import HealthRepository
+from app.repositories.listing_field_value_repository import ListingFieldValueRepository
 from app.repositories.listing_repository import ListingRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.media_repository import MediaRepository
@@ -42,6 +43,7 @@ from app.services.chat_service import ChatService
 from app.services.category_intelligence_service import CategoryIntelligenceService
 from app.services.category_service import CategoryService
 from app.services.health_service import HealthService
+from app.services.listing_field_value_service import ListingFieldValueService
 from app.services.listing_service import ListingService
 from app.services.image_moderation_pipeline import build_image_moderation_pipeline
 from app.services.media_service import MediaService
@@ -120,6 +122,13 @@ def get_listing_service(session: AsyncSession = Depends(get_db)) -> ListingServi
             session,
             NotificationRepository(session),
             SavedSearchRepository(session),
+        ),
+        ListingFieldValueService(
+            CategoryRepository(session),
+            ListingFieldValueRepository(session),
+            VehicleBrandRepository(session),
+            VehicleModelRepository(session),
+            VehicleAliasRepository(session),
         ),
     )
 

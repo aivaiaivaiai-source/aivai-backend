@@ -12,6 +12,7 @@ from app.models.enums import Currency, ListingStatus
 if TYPE_CHECKING:
     from app.models.category import Category
     from app.models.chat import Chat
+    from app.models.listing_field_value import ListingFieldValue
     from app.models.media import Media
     from app.models.user import User
 
@@ -67,4 +68,11 @@ class Listing(Base, TimestampMixin):
         "Chat",
         back_populates="listing",
         lazy="selectin",
+    )
+    field_values: Mapped[list[ListingFieldValue]] = relationship(
+        "ListingFieldValue",
+        back_populates="listing",
+        lazy="select",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

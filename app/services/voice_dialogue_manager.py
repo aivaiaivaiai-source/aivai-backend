@@ -286,7 +286,11 @@ class VoiceDialogueManager:
             currency=currency,
             status=ListingStatus.draft,
         )
-        created = await self._listings.create_listing(body, owner_id=current_user.id)
+        created = await self._listings.create_listing(
+            body,
+            owner_id=current_user.id,
+            known_fields=known,
+        )
         return self._responses.listing_created(
             intent,
             created.model_dump(mode="json"),
@@ -333,5 +337,9 @@ class VoiceDialogueManager:
             currency=currency,
             status=ListingStatus.draft,
         )
-        created = await self._listings.create_listing(body, owner_id=current_user.id)
+        created = await self._listings.create_listing(
+            body,
+            owner_id=current_user.id,
+            known_fields=ext,
+        )
         return self._responses.listing_created(intent, created.model_dump(mode="json"))

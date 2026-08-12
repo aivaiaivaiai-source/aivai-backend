@@ -18,6 +18,7 @@ from app.models.media import Media
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.listing_repository import ListingRepository
 from app.schemas.listing import ListingCreate, ListingRead, ListingStatusUpdate, ListingUpdate
+from app.services.listing_field_value_service import ListingFieldValueService
 from app.services.notification_service import NotificationService
 from app.models.image_moderation_enums import MediaModerationStatus
 from app.services.photo_requirement_policy import (
@@ -36,11 +37,13 @@ class ListingService:
         listing_repository: ListingRepository,
         category_repository: CategoryRepository,
         notification_service: NotificationService,
+        field_value_service: ListingFieldValueService | None = None,
     ) -> None:
         self._session = session
         self._listings = listing_repository
         self._categories = category_repository
         self._notifications = notification_service
+        self._field_values = field_value_service
 
     @staticmethod
     def _ensure_owner(listing: Listing, user_id: int) -> None:
@@ -89,7 +92,13 @@ class ListingService:
             raise EntityNotFoundError("Listing", entity_id=listing_id)
         return ListingRead.model_validate(row)
 
-    async def create_listing(self, data: ListingCreate, owner_id: int) -> ListingRead:
+    async def create_listing(
+        self,
+        data: ListingCreate,
+        owner_id: int,
+        *,
+        known_fields: dict[str, Any] | None = None,
+    ) -> ListingRead:
         category = await self._categories.get_by_id(data.category_id)
         if category is None:
             raise EntityNotFoundError("Category", entity_id=data.category_id)
@@ -120,9 +129,18 @@ class ListingService:
             if refreshed is None:
                 raise TransactionFailedError("Listing vanished after placeholder attach.")
         try:
+            if known_fields and self._field_values is not None:
+                await self._field_values.replace_from_known_fields(
+                    listing_id=refreshed.id,
+                    category_id=data.category_id,
+                    known_fields=known_fields,
+                )
             if refreshed.status == ListingStatus.active:
                 await self._notifications.emit_saved_search_alerts_for_listing(refreshed)
             await self._session.commit()
+        except AppException:
+            await self._session.rollback()
+            raise
         except Exception as exc:
             await self._session.rollback()
             raise TransactionFailedError(

@@ -25,6 +25,7 @@ from app.models.chat import Chat
 from app.models.enums import Currency, ListingStatus
 from app.models.vehicle import VehicleAlias, VehicleBrand, VehicleModel
 from app.models.listing import Listing
+from app.models.listing_field_value import ListingFieldValue
 from app.models.media import Media
 from app.models.message import Message
 from app.models.message_attachment import MessageAttachment
@@ -59,6 +60,7 @@ __all__ = (
     "Chat",
     "Currency",
     "Listing",
+    "ListingFieldValue",
     "ListingStatus",
     "Media",
     "Message",

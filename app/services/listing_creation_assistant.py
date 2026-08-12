@@ -200,7 +200,11 @@ class ListingCreationAssistant:
                 currency=currency,
                 status=ListingStatus.draft,
             )
-            created = await self._listings.create_listing(body, owner_id=current_user.id)
+            created = await self._listings.create_listing(
+                body,
+                owner_id=current_user.id,
+                known_fields=known,
+            )
             session.listing_id = int(created.id)
             session.flow_stage = "publish_preview"
             preview = self.build_draft_preview(
@@ -228,7 +232,11 @@ class ListingCreationAssistant:
             status=ListingStatus.active,
             uses_placeholder_image=uses_placeholder,
         )
-        created = await self._listings.create_listing(body, owner_id=current_user.id)
+        created = await self._listings.create_listing(
+            body,
+            owner_id=current_user.id,
+            known_fields=known,
+        )
         listing_id = int(created.id)
         session.listing_id = listing_id
         session.flow_stage = "promotion"
