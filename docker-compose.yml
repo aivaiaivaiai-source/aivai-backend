@@ -1,10 +1,11 @@
+# Development-only defaults below; override via .env for non-local environments.
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-aivai}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}  # development-only default
       POSTGRES_DB: ${POSTGRES_DB:-aivai}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -26,7 +27,7 @@ services:
       - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-aivai}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}  # development-only default
       POSTGRES_DB: ${POSTGRES_DB:-aivai}
       POSTGRES_SERVER: db
       POSTGRES_PORT: "5432"

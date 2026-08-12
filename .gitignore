@@ -9,10 +9,10 @@ venv/
 ENV/
 env/
 
-# Environment variables
+# Secrets / local env
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # IDE
 .idea/
@@ -42,3 +42,14 @@ Thumbs.db
 
 # Alembic (keep versions tracked; ignore local junk if any)
 *.db
+
+# Runtime media
+media/
+
+# Uploads
+uploads/
+
+# Database dumps
+*.sql
+*.dump
+*.backup
