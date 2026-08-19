@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum as SQLEnum, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, Enum as SQLEnum, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base, TimestampMixin
@@ -50,6 +51,30 @@ class Listing(Base, TimestampMixin):
         default=False,
         server_default="false",
     )
+    is_promoted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        index=True,
+    )
+    promotion_daily_rate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    promotion_tier: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+        index=True,
+    )
+    promotion_starts_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    promotion_ends_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
+    )
 
     owner: Mapped[User | None] = relationship(
         "User",
@@ -63,6 +88,7 @@ class Listing(Base, TimestampMixin):
         lazy="selectin",
         cascade="all, delete-orphan",
         passive_deletes=True,
+        primaryjoin="and_(Listing.id == Media.listing_id, Media.chat_id.is_(None))",
     )
     chats: Mapped[list[Chat]] = relationship(
         "Chat",

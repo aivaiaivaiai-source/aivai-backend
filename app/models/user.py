@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.listing import Listing
     from app.models.message import Message
     from app.models.notification import Notification
+    from app.models.review import Review
     from app.models.saved_search import SavedSearch
 
 
@@ -24,6 +25,8 @@ class User(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     phone: Mapped[phone_str]
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    city: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     balance: Mapped[Decimal] = mapped_column(
         Numeric(14, 2),
@@ -67,4 +70,18 @@ class User(Base, TimestampMixin):
         "Message",
         back_populates="sender",
         foreign_keys="Message.sender_id",
+    )
+    reviews_received: Mapped[list[Review]] = relationship(
+        "Review",
+        back_populates="subject",
+        foreign_keys="Review.subject_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    reviews_authored: Mapped[list[Review]] = relationship(
+        "Review",
+        back_populates="author",
+        foreign_keys="Review.author_id",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

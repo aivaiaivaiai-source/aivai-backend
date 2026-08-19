@@ -278,6 +278,73 @@ async def test_existing_create_listing_without_known_fields_still_works() -> Non
 
     assert result.id == 99
     field_values.replace_from_known_fields.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_listing_service_uses_create_body_fields() -> None:
+    session = AsyncMock()
+    session.commit = AsyncMock()
+    session.rollback = AsyncMock()
+
+    listing_repo = AsyncMock()
+    category_repo = AsyncMock()
+    category_repo.get_by_id = AsyncMock(
+        return_value=SimpleNamespace(id=10, slug="transport-cars")
+    )
+
+    created_listing = SimpleNamespace(
+        id=99,
+        title="Test",
+        description=None,
+        price=Decimal("1000"),
+        currency=Currency.KGS,
+        status=ListingStatus.draft,
+        owner_id=1,
+        category_id=10,
+        uses_placeholder_image=False,
+        images=[],
+        category=SimpleNamespace(id=10, slug="transport-cars"),
+        field_values=[],
+    )
+    listing_repo.create = AsyncMock(return_value=created_listing)
+    listing_repo.get_by_id = AsyncMock(return_value=created_listing)
+
+    field_values = AsyncMock()
+    field_values.replace_from_known_fields = AsyncMock(return_value=[])
+    notifications = AsyncMock()
+
+    service = ListingService(session, listing_repo, category_repo, notifications, field_values)
+    now = datetime.now(UTC)
+    expected = ListingRead(
+        id=99,
+        title="Test",
+        description=None,
+        price=Decimal("1000"),
+        currency=Currency.KGS,
+        status=ListingStatus.draft,
+        owner_id=1,
+        category_id=10,
+        category=CategoryRead(id=10, name="Cars", slug="transport-cars", parent_id=None),
+        images=[],
+        created_at=now,
+        updated_at=now,
+    )
+    with patch.object(ListingRead, "model_validate", return_value=expected):
+        await service.create_listing(
+            ListingCreate(
+                title="Test",
+                description=None,
+                price=Decimal("1000"),
+                category_id=10,
+                currency=Currency.KGS,
+                fields={"city": "Bishkek"},
+            ),
+            owner_id=1,
+        )
+
+    field_values.replace_from_known_fields.assert_awaited_once()
+    kwargs = field_values.replace_from_known_fields.await_args.kwargs
+    assert kwargs["known_fields"] == {"city": "Bishkek"}
     session.commit.assert_awaited_once()
 
 

@@ -10,6 +10,7 @@ from app.db.base_class import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.listing import Listing
+    from app.models.media import Media
     from app.models.message import Message
     from app.models.user import User
 
@@ -44,4 +45,9 @@ class Chat(Base, TimestampMixin):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="Message.created_at",
+    )
+    media: Mapped[list["Media"]] = relationship(
+        "Media",
+        back_populates="chat",
+        passive_deletes=True,
     )

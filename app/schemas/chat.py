@@ -7,6 +7,18 @@ from pydantic import BaseModel, ConfigDict
 from app.schemas.listing import ListingRead
 
 
+class ChatPeerRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    full_name: str
+
+
+class ChatLastMessageRead(BaseModel):
+    text: str
+    created_at: datetime
+
+
 class ChatRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -19,3 +31,5 @@ class ChatRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     listing: ListingRead
+    peer: ChatPeerRead | None = None
+    last_message: ChatLastMessageRead | None = None

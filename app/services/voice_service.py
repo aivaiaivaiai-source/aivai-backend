@@ -127,7 +127,7 @@ class VoiceService:
 
         currency = self._parse_currency(ext.get("currency"))
 
-        rows = await self._listings.get_feed(
+        page = await self._listings.get_feed(
             q=q_clean,
             category_id=cid,
             min_price=min_price,
@@ -139,7 +139,7 @@ class VoiceService:
         )
         return self._responses.search_results(
             intent,
-            [r.model_dump(mode="json") for r in rows],
+            [r.model_dump(mode="json") for r in page.items],
         )
 
     async def handle_audio(self, audio_bytes: bytes, current_user: UserRead) -> VoiceCommandResponse:

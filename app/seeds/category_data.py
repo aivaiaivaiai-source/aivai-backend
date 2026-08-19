@@ -147,6 +147,16 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
         ("price", "Цена", _CORE.price, "Какая цена?"),
         ("condition", "Состояние", _CORE.enum, "Какое состояние?"),
     ],
+    # Mobile create-listing section «Продажа авто» (v2 skeleton slug).
+    "transport-car-sale": [
+        ("city", "Город", _CORE.city, "В каком городе?"),
+        ("brand", "Марка", _CORE.brand, "Какая марка?"),
+        ("model", "Модель", _CORE.model, "Какая модель?"),
+        ("year", "Год", _CORE.year, "Какой год выпуска?"),
+        ("steering_side", "Руль", _CORE.enum, "Левый или правый руль?"),
+        ("price", "Цена", _CORE.price, "Какая цена?"),
+        ("condition", "Состояние", _CORE.enum, "Какое состояние?"),
+    ],
     "transport-parts": [
         ("city", "Город", _CORE.city, "В каком городе?"),
         ("part_type", "Тип запчасти", _CORE.string, "Что за запчасть?"),
@@ -516,6 +526,18 @@ OPTIONAL_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType]]] = {
         ("color", "Цвет", _CORE.string),
         ("vin", "VIN", _CORE.string),
         ("engine_volume", "Объём двигателя", _CORE.string),
+        ("transmission", "Коробка передач", _CORE.string),
+        ("drive", "Привод", _CORE.string),
+        ("fuel", "Топливо", _CORE.string),
+    ],
+    "transport-car-sale": [
+        ("mileage", "Пробег", _CORE.number),
+        ("color", "Цвет", _CORE.string),
+        ("vin", "VIN", _CORE.string),
+        ("engine_volume", "Объём двигателя", _CORE.string),
+        ("transmission", "Коробка передач", _CORE.string),
+        ("drive", "Привод", _CORE.string),
+        ("fuel", "Топливо", _CORE.string),
     ],
     "real-estate-sale": [
         ("area", "Площадь", _CORE.decimal),

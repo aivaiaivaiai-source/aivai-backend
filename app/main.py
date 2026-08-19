@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -17,25 +18,43 @@ from app.core.exceptions import AppException
 from app.core.logging import configure_logging
 from app.middleware.request_id import get_request_id
 from app.middleware.request_id import RequestIdMiddleware
+from app.services.assistant_conversation_cleanup_worker import (
+    assistant_conversation_cleanup_loop,
+)
 from app.services.health_service import HealthService
 
 
 logger = logging.getLogger(__name__)
 
 
-def _error_body(*, detail: str, code: str, status: int) -> dict[str, str | int]:
-    return {
+def _error_body(
+    *,
+    detail: str,
+    code: str,
+    status: int,
+    extra: dict[str, object] | None = None,
+) -> dict[str, object]:
+    body: dict[str, object] = {
         "detail": detail,
         "code": code,
         "status": status,
         "request_id": get_request_id() or "",
     }
+    if extra:
+        body.update(extra)
+    return body
 
 
-def _json_error(*, detail: str, code: str, status: int) -> JSONResponse:
+def _json_error(
+    *,
+    detail: str,
+    code: str,
+    status: int,
+    extra: dict[str, object] | None = None,
+) -> JSONResponse:
     return JSONResponse(
         status_code=status,
-        content=_error_body(detail=detail, code=code, status=status),
+        content=_error_body(detail=detail, code=code, status=status, extra=extra),
     )
 
 
@@ -49,8 +68,24 @@ async def lifespan(app: FastAPI):
         whisper_ready,
         "present" if whisper_ready else "missing OPENAI_API_KEY",
     )
+    stop_cleanup = asyncio.Event()
+    cleanup_task = asyncio.create_task(
+        assistant_conversation_cleanup_loop(
+            settings=_settings,
+            stop_event=stop_cleanup,
+        ),
+        name="assistant_conversation_cleanup",
+    )
     logger.info("Application startup complete.")
-    yield
+    try:
+        yield
+    finally:
+        stop_cleanup.set()
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
 
 _settings = get_settings()
@@ -79,6 +114,7 @@ def create_app() -> FastAPI:
             detail=exc.message or exc.__class__.__name__,
             code=exc.error_code,
             status=exc.status_code,
+            extra=exc.extra or None,
         )
 
     @application.exception_handler(SQLAlchemyError)

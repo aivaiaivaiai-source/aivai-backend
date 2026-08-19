@@ -95,7 +95,9 @@ class _ListingStub:
         return _Created()
 
     async def get_feed(self, **_k):
-        return []
+        from app.schemas.listing import ListingFeedPage
+
+        return ListingFeedPage(items=[], total=0)
 
 
 class _SavedStub:

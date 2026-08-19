@@ -1,0 +1,19 @@
+# AiVai assistant conversation cleanup — OPTIONAL cron example
+#
+# By default the API already runs this cleanup automatically in the background
+# (ASSISTANT_CONVERSATION_CLEANUP_ENABLED=true). Use cron only if you disable
+# that loop or want a second safety net.
+#
+# Deletes chats with last_activity_at older than ASSISTANT_CONVERSATION_TTL_DAYS (default 7).
+# Edit paths and user, then install with: crontab -e
+#
+# Runs daily at 03:30, from backend project root, appends logs.
+
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# minute hour day month weekday
+30 3 * * * cd /opt/aivai/aivai_backend && /opt/aivai/aivai_backend/.venv/bin/python -m scripts.cleanup_assistant_conversations >> /var/log/aivai/assistant-conversation-cleanup.log 2>&1
+
+# Optional explicit TTL:
+# 30 3 * * * cd /opt/aivai/aivai_backend && /opt/aivai/aivai_backend/.venv/bin/python -m scripts.cleanup_assistant_conversations --ttl-days 7 >> /var/log/aivai/assistant-conversation-cleanup.log 2>&1

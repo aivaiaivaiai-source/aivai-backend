@@ -25,7 +25,16 @@ class MediaRepository(BaseRepository[Media]):
     async def list_by_listing(self, listing_id: int) -> list[Media]:
         stmt = (
             select(Media)
-            .where(Media.listing_id == listing_id)
+            .where(Media.listing_id == listing_id, Media.chat_id.is_(None))
+            .order_by(Media.order, Media.id)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_by_chat(self, chat_id: int) -> list[Media]:
+        stmt = (
+            select(Media)
+            .where(Media.chat_id == chat_id)
             .order_by(Media.order, Media.id)
         )
         result = await self._session.execute(stmt)

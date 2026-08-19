@@ -256,7 +256,7 @@ class ListingFieldValueService:
                 ) from exc
             return
 
-        if field_type == CategoryFieldType.decimal:
+        if field_type in {CategoryFieldType.decimal, CategoryFieldType.price}:
             try:
                 row.value_decimal = Decimal(str(raw_value).strip())
             except InvalidOperation as exc:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -56,3 +56,27 @@ class AssistantConversationRepository(BaseRepository[AssistantConversation]):
             status=AssistantConversationStatus.closed,
             last_activity_at=datetime.now(UTC),
         )
+
+    async def delete_inactive_before(self, cutoff: datetime) -> int:
+        """Hard-delete all conversations with last_activity_at older than cutoff."""
+        stmt = delete(AssistantConversation).where(
+            AssistantConversation.last_activity_at < cutoff,
+        )
+        result = await self._session.execute(stmt)
+        await self._session.flush()
+        return int(result.rowcount or 0)
+
+    async def delete_inactive_before_batch(self, cutoff: datetime, *, limit: int) -> int:
+        """Hard-delete up to ``limit`` inactive conversations (messages cascade)."""
+        if limit < 1:
+            raise ValueError("limit must be >= 1")
+        ids_stmt = (
+            select(AssistantConversation.id)
+            .where(AssistantConversation.last_activity_at < cutoff)
+            .order_by(AssistantConversation.id)
+            .limit(limit)
+        )
+        stmt = delete(AssistantConversation).where(AssistantConversation.id.in_(ids_stmt))
+        result = await self._session.execute(stmt)
+        await self._session.flush()
+        return int(result.rowcount or 0)

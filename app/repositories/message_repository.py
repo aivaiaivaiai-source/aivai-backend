@@ -66,3 +66,17 @@ class MessageRepository(BaseRepository[Message]):
         for mid in media_ids:
             self._session.add(MessageAttachment(message_id=message_id, media_id=mid))
         await self._session.flush()
+
+    async def get_last_for_chats(self, chat_ids: list[int]) -> dict[int, Message]:
+        if not chat_ids:
+            return {}
+        stmt = (
+            select(Message)
+            .where(Message.chat_id.in_(chat_ids))
+            .options(selectinload(Message.attachments).selectinload(MessageAttachment.media))
+            .order_by(Message.chat_id, Message.created_at.desc())
+            .distinct(Message.chat_id)
+        )
+        result = await self._session.execute(stmt)
+        rows = list(result.scalars().unique().all())
+        return {row.chat_id: row for row in rows}

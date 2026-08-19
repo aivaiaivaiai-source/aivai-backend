@@ -1,11 +1,13 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    ai_agents,
     assistant,
     auth,
     categories,
     category_intelligence,
     chats,
+    favorites,
     health,
     listings,
     media,
@@ -23,6 +25,7 @@ api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(chats.router, prefix="/chats", tags=["chats"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(listings.router, prefix="/listings", tags=["listings"])
+api_router.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 api_router.include_router(
     media.listings_media_router,
     prefix="/listings",
@@ -52,3 +55,4 @@ api_router.include_router(
 )
 api_router.include_router(voice.router, prefix="/voice", tags=["voice"])
 api_router.include_router(assistant.router, prefix="/assistant", tags=["assistant"])
+api_router.include_router(ai_agents.router, prefix="/ai-agents", tags=["ai-agents"])

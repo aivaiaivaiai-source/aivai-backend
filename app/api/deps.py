@@ -24,12 +24,14 @@ from app.repositories.vehicle_repository import (
     VehicleBrandRepository,
     VehicleModelRepository,
 )
+from app.repositories.favorite_repository import FavoriteRepository
 from app.repositories.health_repository import HealthRepository
 from app.repositories.listing_field_value_repository import ListingFieldValueRepository
 from app.repositories.listing_repository import ListingRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.media_repository import MediaRepository
 from app.repositories.notification_repository import NotificationRepository
+from app.repositories.review_repository import ReviewRepository
 from app.repositories.saved_search_repository import SavedSearchRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserRead
@@ -42,25 +44,46 @@ from app.services.auth_service import AuthService
 from app.services.chat_service import ChatService
 from app.services.category_intelligence_service import CategoryIntelligenceService
 from app.services.category_service import CategoryService
+from app.services.favorite_service import FavoriteService
 from app.services.health_service import HealthService
 from app.services.listing_field_value_service import ListingFieldValueService
 from app.services.listing_service import ListingService
 from app.services.image_moderation_pipeline import build_image_moderation_pipeline
 from app.services.media_service import MediaService
 from app.services.notification_service import NotificationService
+from app.services.promotion_service import PromotionService
 from app.services.saved_search_service import SavedSearchService
 from app.services.speech_to_text_service import SpeechToTextService, WhisperSpeechToTextService
 from app.services.storage_service import StorageService
-from app.services.user_service import UserService
+from app.services.user_service import ReviewService, UserService
 from app.services.vehicle_catalog_service import VehicleCatalogService
 from app.services.voice_service import VoiceService
+from app.services.ai_agent_service import AiAgentService
+from app.services.ai_search_service import AiSearchService
+from app.services.wallet_service import WalletService
+from app.repositories.ai_search_task_repository import AiSearchTaskRepository
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_user_service(session: AsyncSession = Depends(get_db)) -> UserService:
-    return UserService(session, UserRepository(session))
+    settings = get_settings()
+    return UserService(
+        session,
+        UserRepository(session),
+        listing_repository=ListingRepository(session),
+        review_repository=ReviewRepository(session),
+        storage=StorageService(settings),
+    )
+
+
+def get_review_service(session: AsyncSession = Depends(get_db)) -> ReviewService:
+    return ReviewService(
+        session,
+        ReviewRepository(session),
+        UserRepository(session),
+    )
 
 
 def get_auth_service(session: AsyncSession = Depends(get_db)) -> AuthService:
@@ -130,6 +153,25 @@ def get_listing_service(session: AsyncSession = Depends(get_db)) -> ListingServi
             VehicleModelRepository(session),
             VehicleAliasRepository(session),
         ),
+        ai_search_service=AiSearchService(
+            session,
+            AiSearchTaskRepository(session),
+            ListingRepository(session),
+            CategoryRepository(session),
+            NotificationRepository(session),
+        ),
+    )
+
+
+def get_favorite_service(
+    session: AsyncSession = Depends(get_db),
+    listing_service: ListingService = Depends(get_listing_service),
+) -> FavoriteService:
+    return FavoriteService(
+        session,
+        FavoriteRepository(session),
+        ListingRepository(session),
+        listing_service,
     )
 
 
@@ -231,6 +273,40 @@ def get_assistant_service(
     assistant_voice_service: AssistantVoiceService = Depends(get_assistant_voice_service),
 ) -> AssistantService:
     return AssistantService(session, voice_service, conversation_service, assistant_voice_service)
+
+
+def get_wallet_service(session: AsyncSession = Depends(get_db)) -> WalletService:
+    return WalletService(session)
+
+
+def get_promotion_service(
+    session: AsyncSession = Depends(get_db),
+    listing_service: ListingService = Depends(get_listing_service),
+) -> PromotionService:
+    return PromotionService(
+        session,
+        ListingRepository(session),
+        UserRepository(session),
+        WalletService(session),
+        listing_service,
+    )
+
+
+def get_ai_search_service(session: AsyncSession = Depends(get_db)) -> AiSearchService:
+    return AiSearchService(
+        session,
+        AiSearchTaskRepository(session),
+        ListingRepository(session),
+        CategoryRepository(session),
+        NotificationRepository(session),
+    )
+
+
+def get_ai_agent_service(
+    session: AsyncSession = Depends(get_db),
+    search: AiSearchService = Depends(get_ai_search_service),
+) -> AiAgentService:
+    return AiAgentService(session, WalletService(session), search)
 
 
 def get_health_service(session: AsyncSession = Depends(get_db)) -> HealthService:

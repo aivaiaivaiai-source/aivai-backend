@@ -6,6 +6,7 @@ from collections import defaultdict, deque
 
 from fastapi import Request
 
+from app.core.constants import LISTING_CREATE_MAX_REQUESTS, LISTING_CREATE_WINDOW_SECONDS
 from app.core.exceptions import RateLimitExceededError
 
 
@@ -42,6 +43,10 @@ class InMemoryRateLimiter:
 
 
 AUTH_IP_LIMITER = InMemoryRateLimiter(max_requests=5, window_seconds=60.0)
+LISTING_CREATE_LIMITER = InMemoryRateLimiter(
+    max_requests=LISTING_CREATE_MAX_REQUESTS,
+    window_seconds=LISTING_CREATE_WINDOW_SECONDS,
+)
 
 
 async def enforce_auth_ip_rate_limit(request: Request) -> None:

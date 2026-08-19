@@ -17,7 +17,7 @@ from app.repositories.chat_repository import ChatRepository
 from app.repositories.listing_repository import ListingRepository
 from app.repositories.media_repository import MediaRepository
 from app.repositories.message_repository import MessageRepository
-from app.schemas.chat import ChatRead
+from app.schemas.chat import ChatLastMessageRead, ChatPeerRead, ChatRead
 from app.schemas.media import MediaRead
 from app.schemas.message import MessageRead
 from app.services.storage_service import StorageService
@@ -62,9 +62,37 @@ class ChatService:
             attachments=[MediaRead.model_validate(a.media) for a in ordered],
         )
 
-    def _chat_read(self, chat: Chat, *, unread_count: int) -> ChatRead:
+    def _chat_read(
+        self,
+        chat: Chat,
+        *,
+        unread_count: int,
+        current_user_id: int,
+        last_message: Message | None = None,
+    ) -> ChatRead:
+        peer_user = chat.seller if chat.buyer_id == current_user_id else chat.buyer
+        peer = (
+            ChatPeerRead(id=peer_user.id, full_name=peer_user.full_name)
+            if peer_user is not None
+            else None
+        )
+        last = None
+        if last_message is not None:
+            preview = last_message.text.strip()
+            if not preview and last_message.attachments:
+                preview = "📷 Фото"
+            last = ChatLastMessageRead(
+                text=preview,
+                created_at=last_message.created_at,
+            )
         base = ChatRead.model_validate(chat)
-        return base.model_copy(update={"unread_count": unread_count})
+        return base.model_copy(
+            update={
+                "unread_count": unread_count,
+                "peer": peer,
+                "last_message": last,
+            }
+        )
 
     async def get_or_create_chat_for_listing(
         self,
@@ -105,11 +133,27 @@ class ChatService:
         if loaded is None:
             raise TransactionFailedError("Chat vanished after creation.")
         unread = await self._messages.count_unread_from_others(loaded.id, current_user_id)
-        return self._chat_read(loaded, unread_count=unread)
+        last = await self._messages.get_last_for_chats([loaded.id])
+        return self._chat_read(
+            loaded,
+            unread_count=unread,
+            current_user_id=current_user_id,
+            last_message=last.get(loaded.id),
+        )
 
     async def list_chats_for_user(self, *, current_user_id: int) -> list[ChatRead]:
         rows = await self._chats.list_user_chats(current_user_id)
-        return [self._chat_read(chat, unread_count=unread) for chat, unread in rows]
+        chat_ids = [chat.id for chat, _ in rows]
+        last_by_chat = await self._messages.get_last_for_chats(chat_ids)
+        return [
+            self._chat_read(
+                chat,
+                unread_count=unread,
+                current_user_id=current_user_id,
+                last_message=last_by_chat.get(chat.id),
+            )
+            for chat, unread in rows
+        ]
 
     async def list_messages(
         self,
@@ -175,7 +219,12 @@ class ChatService:
                 )
             listing_id = chat.listing_id
             for media in rows:
-                if media.listing_id != listing_id:
+                if media.chat_id is not None and media.chat_id != chat.id:
+                    raise AppException(
+                        "Attachments must belong to this conversation.",
+                        status_code=400,
+                    )
+                if media.chat_id is None and media.listing_id != listing_id:
                     raise AppException(
                         "Attachments must belong to the listing for this conversation.",
                         status_code=400,
@@ -208,4 +257,54 @@ class ChatService:
         if hydrated is None:
             raise TransactionFailedError("Message vanished after send.")
         return self._message_read(hydrated)
+
+    async def upload_attachments(
+        self,
+        chat_id: int,
+        *,
+        current_user_id: int,
+        payloads: list[tuple[bytes, str, str | None]],
+    ) -> list[MediaRead]:
+        if not payloads:
+            raise AppException("At least one file is required.", status_code=400)
+
+        chat = await self._chats.get_by_id(chat_id)
+        if chat is None:
+            raise EntityNotFoundError("Chat", entity_id=chat_id)
+        self._ensure_participant(chat, current_user_id)
+
+        existing = await self._media.list_by_chat(chat_id)
+        next_order_base = max((m.order for m in existing), default=-1) + 1
+
+        saved_urls: list[str] = []
+        try:
+            created_rows = []
+            for idx, (content, content_type, source_name) in enumerate(payloads):
+                url = self._storage.save_image(content, content_type)
+                saved_urls.append(url)
+                row = Media(
+                    url=url,
+                    listing_id=chat.listing_id,
+                    chat_id=chat.id,
+                    order=next_order_base + idx,
+                )
+                created = await self._media.create(row)
+                refreshed = await self._media.get_by_id(created.id)
+                if refreshed is not None:
+                    created_rows.append(refreshed)
+
+            await self._session.commit()
+            return [MediaRead.model_validate(m) for m in created_rows]
+        except AppException:
+            await self._session.rollback()
+            for url in saved_urls:
+                self._storage.delete_file(url)
+            raise
+        except Exception as exc:
+            await self._session.rollback()
+            for url in saved_urls:
+                self._storage.delete_file(url)
+            raise TransactionFailedError(
+                "Failed to upload chat attachments; transaction rolled back.",
+            ) from exc
 

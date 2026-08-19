@@ -6,7 +6,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from app.core.logging import configure_logging
-from app.core.rate_limit import AUTH_IP_LIMITER
+from app.core.rate_limit import AUTH_IP_LIMITER, LISTING_CREATE_LIMITER
 from app.main import app
 
 
@@ -33,5 +33,7 @@ def _clear_dependency_overrides() -> None:
 @pytest.fixture(autouse=True)
 async def _reset_auth_rate_limits() -> AsyncGenerator[None, None]:
     await AUTH_IP_LIMITER.reset()
+    await LISTING_CREATE_LIMITER.reset()
     yield
     await AUTH_IP_LIMITER.reset()
+    await LISTING_CREATE_LIMITER.reset()

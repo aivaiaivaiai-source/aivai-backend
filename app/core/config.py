@@ -37,6 +37,14 @@ class Settings(BaseSettings):
 
     TTS_AUDIO_TTL_HOURS: int = 24
 
+    # Inactive assistant chats (by last_activity_at); auto-cleaned while API runs.
+    ASSISTANT_CONVERSATION_TTL_DAYS: int = 7
+    ASSISTANT_CONVERSATION_CLEANUP_ENABLED: bool = True
+    ASSISTANT_CONVERSATION_CLEANUP_INTERVAL_HOURS: float = 24
+    ASSISTANT_CONVERSATION_CLEANUP_BATCH_SIZE: int = 2000
+    ASSISTANT_CONVERSATION_CLEANUP_MAX_BATCHES: int = 500
+    ASSISTANT_CONVERSATION_CLEANUP_BATCH_PAUSE_MS: int = 50
+
     CATEGORY_SNAPSHOT_TTL_SECONDS: int = 60
 
     @computed_field

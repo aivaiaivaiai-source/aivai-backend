@@ -13,12 +13,14 @@ class AppException(Exception):
         *,
         status_code: int | None = None,
         code: str | None = None,
+        extra: dict[str, object] | None = None,
     ) -> None:
         self.message = message or ""
         self.status_code = (
             status_code if status_code is not None else self.default_status_code
         )
         self.code = code
+        self.extra = extra or {}
         super().__init__(self.message)
 
     @property
@@ -74,3 +76,26 @@ class RateLimitExceededError(AppException):
 
     default_status_code = 429
     default_code = "RATE_LIMIT_EXCEEDED"
+
+
+class InsufficientBalanceError(AppException):
+    """Wallet cannot cover a charge. Client should offer top-up."""
+
+    default_status_code = 402
+    default_code = "TOPUP_REQUIRED"
+
+    def __init__(
+        self,
+        *,
+        balance: object,
+        required_amount: object,
+        shortfall: object,
+    ) -> None:
+        super().__init__(
+            f"Недостаточно средств. Нужно {required_amount} сом, на балансе {balance}.",
+            extra={
+                "balance": str(balance),
+                "required_amount": str(required_amount),
+                "shortfall": str(shortfall),
+            },
+        )

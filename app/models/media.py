@@ -10,6 +10,7 @@ from app.db.base_class import Base, TimestampMixin
 from app.models.image_moderation_enums import MediaModerationStatus
 
 if TYPE_CHECKING:
+    from app.models.chat import Chat
     from app.models.listing import Listing
     from app.models.message_attachment import MessageAttachment
 
@@ -22,6 +23,11 @@ class Media(Base, TimestampMixin):
     listing_id: Mapped[int] = mapped_column(
         ForeignKey("listings.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+    )
+    chat_id: Mapped[int | None] = mapped_column(
+        ForeignKey("chats.id", ondelete="CASCADE"),
+        nullable=True,
         index=True,
     )
     order: Mapped[int] = mapped_column("order", Integer, nullable=False, default=0)
@@ -44,6 +50,7 @@ class Media(Base, TimestampMixin):
     )
 
     listing: Mapped[Listing] = relationship("Listing", back_populates="images")
+    chat: Mapped[Chat | None] = relationship("Chat", back_populates="media")
     message_links: Mapped[list["MessageAttachment"]] = relationship(
         "MessageAttachment",
         back_populates="media",

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -12,14 +13,23 @@ from app.core.exceptions import (
     TransactionFailedError,
 )
 from app.core.pagination import clamp_limit
+from app.core.promotion_policy import read_fields as promotion_read_fields
 from app.models.enums import Currency, ListingStatus
 from app.models.listing import Listing
 from app.models.media import Media
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.listing_repository import ListingRepository
-from app.schemas.listing import ListingCreate, ListingRead, ListingStatusUpdate, ListingUpdate
+from app.schemas.listing import (
+    ListingCreate,
+    ListingFeedPage,
+    ListingRead,
+    ListingStatusUpdate,
+    ListingUpdate,
+    serialize_listing_fields,
+)
 from app.services.listing_field_value_service import ListingFieldValueService
 from app.services.notification_service import NotificationService
+from app.services.ai_search_service import AiSearchService
 from app.models.image_moderation_enums import MediaModerationStatus
 from app.services.photo_requirement_policy import (
     PLACEHOLDER_MEDIA_URL,
@@ -38,12 +48,23 @@ class ListingService:
         category_repository: CategoryRepository,
         notification_service: NotificationService,
         field_value_service: ListingFieldValueService | None = None,
+        ai_search_service: AiSearchService | None = None,
     ) -> None:
         self._session = session
         self._listings = listing_repository
         self._categories = category_repository
         self._notifications = notification_service
         self._field_values = field_value_service
+        self._ai_search = ai_search_service
+
+    @staticmethod
+    def _to_read(row: Listing) -> ListingRead:
+        read = ListingRead.model_validate(row)
+        updates: dict[str, Any] = promotion_read_fields(row, now=datetime.now(UTC))
+        raw_fields = row.__dict__.get("field_values")
+        if raw_fields:
+            updates["fields"] = serialize_listing_fields(raw_fields)
+        return read.model_copy(update=updates)
 
     @staticmethod
     def _ensure_owner(listing: Listing, user_id: int) -> None:
@@ -90,7 +111,7 @@ class ListingService:
         row = await self._listings.get_by_id(listing_id)
         if row is None:
             raise EntityNotFoundError("Listing", entity_id=listing_id)
-        return ListingRead.model_validate(row)
+        return self._to_read(row)
 
     async def create_listing(
         self,
@@ -128,15 +149,18 @@ class ListingService:
             refreshed = await self._listings.get_by_id(refreshed.id)
             if refreshed is None:
                 raise TransactionFailedError("Listing vanished after placeholder attach.")
+        payload_fields = known_fields if known_fields is not None else data.fields
         try:
-            if known_fields and self._field_values is not None:
+            if payload_fields and self._field_values is not None:
                 await self._field_values.replace_from_known_fields(
                     listing_id=refreshed.id,
                     category_id=data.category_id,
-                    known_fields=known_fields,
+                    known_fields=payload_fields,
                 )
             if refreshed.status == ListingStatus.active:
                 await self._notifications.emit_saved_search_alerts_for_listing(refreshed)
+                if self._ai_search is not None:
+                    await self._ai_search.emit_matches_for_listing(refreshed)
             await self._session.commit()
         except AppException:
             await self._session.rollback()
@@ -150,7 +174,7 @@ class ListingService:
         persisted = await self._listings.get_by_id(refreshed.id)
         if persisted is None:
             raise TransactionFailedError("Listing vanished after creation.")
-        return ListingRead.model_validate(persisted)
+        return self._to_read(persisted)
 
     async def update_listing(
         self,
@@ -189,7 +213,7 @@ class ListingService:
         final = await self._listings.get_by_id(updated.id)
         if final is None:
             raise TransactionFailedError("Listing not found after update.")
-        return ListingRead.model_validate(final)
+        return self._to_read(final)
 
     async def delete_listing(self, listing_id: int, *, actor_user_id: int) -> None:
         listing = await self._listings.get_by_id(listing_id)
@@ -224,7 +248,10 @@ class ListingService:
         target = payload.status
         allowed = {
             (ListingStatus.draft, ListingStatus.active),
+            (ListingStatus.active, ListingStatus.draft),  # deactivate
             (ListingStatus.active, ListingStatus.sold),
+            (ListingStatus.sold, ListingStatus.active),
+            (ListingStatus.sold, ListingStatus.draft),
         }
         if (current, target) not in allowed:
             raise AppException("Invalid status transition", status_code=400)
@@ -253,23 +280,60 @@ class ListingService:
         final = await self._listings.get_by_id(updated.id)
         if final is None:
             raise TransactionFailedError("Listing not found after status update.")
-        return ListingRead.model_validate(final)
+
+        if target == ListingStatus.active:
+            await self._notifications.emit_saved_search_alerts_for_listing(final)
+            if self._ai_search is not None:
+                await self._ai_search.emit_matches_for_listing(final)
+            try:
+                await self._session.commit()
+            except Exception as exc:
+                await self._session.rollback()
+                raise TransactionFailedError(
+                    "Failed to emit listing alerts; transaction rolled back.",
+                ) from exc
+
+        return self._to_read(final)
 
     async def get_feed(
         self,
         *,
         category_id: int | None = None,
+        category_ids: list[int] | None = None,
         min_price: Decimal | None = None,
         max_price: Decimal | None = None,
         currency: Currency | None = None,
         status: ListingStatus | None = None,
         q: str | None = None,
+        city: str | None = None,
+        brand: str | None = None,
+        model: str | None = None,
+        year_min: int | None = None,
+        year_max: int | None = None,
+        steering: str | None = None,
+        engine_volume: str | None = None,
+        fuel: str | None = None,
+        transmission: str | None = None,
         limit: int = 20,
         offset: int = 0,
-    ) -> list[ListingRead]:
+    ) -> ListingFeedPage:
         limit = clamp_limit(limit, max_limit=100)
         if q is not None:
             q = q.strip() or None
+        if city is not None:
+            city = city.strip() or None
+        if brand is not None:
+            brand = brand.strip() or None
+        if model is not None:
+            model = model.strip() or None
+        if steering is not None:
+            steering = steering.strip() or None
+        if engine_volume is not None:
+            engine_volume = engine_volume.strip() or None
+        if fuel is not None:
+            fuel = fuel.strip() or None
+        if transmission is not None:
+            transmission = transmission.strip() or None
 
         if (
             min_price is not None
@@ -280,15 +344,79 @@ class ListingService:
                 "min_price cannot be greater than max_price",
                 status_code=400,
             )
+        if (
+            year_min is not None
+            and year_max is not None
+            and year_min > year_max
+        ):
+            raise AppException(
+                "year_min cannot be greater than year_max",
+                status_code=400,
+            )
 
-        rows = await self._listings.search_listings(
+        # Public GET /listings is a marketplace feed — never list drafts.
+        if status == ListingStatus.draft:
+            raise AppException(
+                "Draft listings are not available in the public feed",
+                status_code=400,
+                code="INVALID_FEED_STATUS",
+            )
+        effective_status = status if status is not None else ListingStatus.active
+        filter_kwargs = dict(
             category_id=category_id,
+            category_ids=category_ids,
             min_price=min_price,
             max_price=max_price,
             currency=currency,
-            status=status if status is not None else ListingStatus.active,
+            status=effective_status,
             q=q,
+            city=city,
+            brand=brand,
+            model=model,
+            year_min=year_min,
+            year_max=year_max,
+            steering=steering,
+            engine_volume=engine_volume,
+            fuel=fuel,
+            transmission=transmission,
+        )
+        total = await self._listings.count_listings(**filter_kwargs)
+        rows = await self._listings.search_listings(
+            **filter_kwargs,
             limit=limit,
             offset=offset,
         )
-        return [ListingRead.model_validate(x) for x in rows]
+        return ListingFeedPage(
+            items=[self._to_read(x) for x in rows],
+            total=total,
+        )
+
+    async def get_mine(
+        self,
+        *,
+        owner_id: int,
+        status: ListingStatus | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> ListingFeedPage:
+        """Owner cabinet — any status, including drafts."""
+        limit = clamp_limit(limit, max_limit=100)
+        filter_kwargs: dict = {"owner_id": owner_id}
+        if status is not None:
+            filter_kwargs["status"] = status
+        else:
+            filter_kwargs["statuses"] = [
+                ListingStatus.active,
+                ListingStatus.draft,
+                ListingStatus.sold,
+            ]
+        total = await self._listings.count_listings(**filter_kwargs)
+        rows = await self._listings.search_listings(
+            **filter_kwargs,
+            limit=limit,
+            offset=offset,
+        )
+        return ListingFeedPage(
+            items=[self._to_read(x) for x in rows],
+            total=total,
+        )

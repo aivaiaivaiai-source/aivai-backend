@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 
 from app.api.deps import get_chat_service, get_current_user
 from app.core.constants import MAX_LIMIT
 from app.schemas.chat import ChatRead
+from app.schemas.media import MediaRead
 from app.schemas.message import MessageCreate, MessageRead
 from app.schemas.user import UserRead
 from app.services.chat_service import ChatService
+from app.services.storage_service import read_upload_limited
 
 router = APIRouter()
 
@@ -58,4 +60,19 @@ async def send_chat_message(
         current_user_id=user.id,
         text=body.text,
         media_ids=body.media_ids,
+    )
+
+
+@router.post("/{chat_id}/attachments", response_model=list[MediaRead], status_code=201)
+async def upload_chat_attachments(
+    chat_id: int,
+    files: list[UploadFile] = File(...),
+    service: ChatService = Depends(get_chat_service),
+    user: UserRead = Depends(get_current_user),
+) -> list[MediaRead]:
+    payloads = [await read_upload_limited(f) for f in files]
+    return await service.upload_attachments(
+        chat_id,
+        current_user_id=user.id,
+        payloads=payloads,
     )

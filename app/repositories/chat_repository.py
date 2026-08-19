@@ -21,6 +21,8 @@ class ChatRepository(BaseRepository[Chat]):
             .options(
                 selectinload(Chat.listing).selectinload(Listing.images),
                 selectinload(Chat.listing).selectinload(Listing.category),
+                selectinload(Chat.buyer),
+                selectinload(Chat.seller),
             )
         )
         result = await self._session.execute(stmt)
@@ -81,6 +83,8 @@ class ChatRepository(BaseRepository[Chat]):
             .options(
                 selectinload(Chat.listing).selectinload(Listing.images),
                 selectinload(Chat.listing).selectinload(Listing.category),
+                selectinload(Chat.buyer),
+                selectinload(Chat.seller),
             )
             .order_by(sort_ts.desc())
         )
