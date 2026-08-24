@@ -115,7 +115,18 @@ class ListingUpdate(BaseModel):
     price: Decimal | None = Field(default=None, ge=0)
     currency: Currency | None = None
     category_id: int | None = Field(default=None, ge=1)
+    fields: dict[str, ListingFieldScalar] | None = None
     # Status changes only via PATCH /listings/{id}/status (photo policy + future moderation).
+
+    @field_validator("fields")
+    @classmethod
+    def validate_fields(
+        cls,
+        value: dict[str, ListingFieldScalar] | None,
+    ) -> dict[str, ListingFieldScalar] | None:
+        if value is None:
+            return None
+        return ListingCreate.validate_fields(value)
 
 
 class ListingStatusUpdate(BaseModel):

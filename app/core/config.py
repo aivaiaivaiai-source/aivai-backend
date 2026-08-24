@@ -32,6 +32,15 @@ class Settings(BaseSettings):
 
     MEDIA_ROOT: str = "media"
     MEDIA_URL: str = "/media/"
+    # local = LocalDiskStorage + StaticFiles; s3 = S3CompatibleStorage (R2/MinIO/AWS).
+    MEDIA_STORAGE_BACKEND: str = "local"
+    MEDIA_S3_ENDPOINT_URL: str | None = None
+    MEDIA_S3_BUCKET: str | None = None
+    MEDIA_S3_REGION: str | None = None
+    MEDIA_S3_ACCESS_KEY: str | None = None
+    MEDIA_S3_SECRET_KEY: str | None = None
+    MEDIA_S3_PUBLIC_BASE_URL: str | None = None
+    MEDIA_S3_ADDRESSING_STYLE: str = "path"
 
     OPENAI_API_KEY: str | None = None
 
@@ -47,6 +56,73 @@ class Settings(BaseSettings):
 
     CATEGORY_SNAPSHOT_TTL_SECONDS: int = 60
 
+    FOCUS_BBOX_ENABLED: bool = True
+    FOCUS_BBOX_MODEL_ID: str = "PekingU/rtdetr_r18vd_coco_o365"
+    FOCUS_BBOX_MIN_CONFIDENCE: float = 0.35
+
+    # Paid AI search assistants: expire subscriptions + drain match queue.
+    AI_AGENT_MAINTENANCE_INTERVAL_SECONDS: float = 300
+
+    # Redis for AI match queue + realtime pub/sub. Empty → in-memory fallback.
+    REDIS_URL: str = "redis://127.0.0.1:6379/0"
+
+    # Optional read replica for AI history (falls back to primary).
+    POSTGRES_READ_SERVER: str | None = None
+
+    # --- Media Platform async pipeline (Stage 3) — default OFF ---
+    MEDIA_ASYNC_PIPELINE_ENABLED: bool = False
+    MEDIA_ASYNC_PIPELINE_VERSION: str = "v2"
+    MEDIA_QUEUE_NAMESPACE: str = "aivai:media"
+    MEDIA_JOB_LEASE_SECONDS: int = 300
+    MEDIA_JOB_MAX_ATTEMPTS: int = 5
+    MEDIA_JOB_RETRY_BACKOFF_SECONDS: str = "15,60,300,900,3600"
+    MEDIA_JOB_PROCESSING_TIMEOUT_SECONDS: int = 120
+    MEDIA_OUTBOX_DISPATCH_BATCH: int = 50
+    MEDIA_JOB_RECONCILE_BATCH: int = 100
+    MEDIA_WORKER_BLOCK_MS: int = 5000
+    MEDIA_WORKER_CONSUMER_NAME: str = ""
+    MEDIA_WORKER_MIN_REPLICAS: int = 1
+    MEDIA_WORKER_MAX_REPLICAS: int = 10
+    MEDIA_QUEUE_MAX_BACKLOG: int = 100_000
+
+    # --- Media Engine (Stage 4) ---
+    MEDIA_PIPELINE_VERSION: str = "v2"
+    MEDIA_MAX_DECODE_PIXELS: int = 20_000_000
+    MEDIA_MAX_IMAGE_BYTES: int = 5 * 1024 * 1024
+    MEDIA_DETECTOR_TIMEOUT_SECONDS: int = 30
+    MEDIA_DETECTOR_INFERENCE_MAX_EDGE: int = 1280
+    MEDIA_ENGINE_JPEG_QUALITY: int = 88
+    MEDIA_ENGINE_DISPLAY_LONG_EDGE: int = 1600
+    MEDIA_ENGINE_FEED_LONG_EDGE: int = 800
+    MEDIA_ENGINE_THUMB_LONG_EDGE: int = 320
+
+    # --- Direct upload + CDN (Stage 5) — default OFF ---
+    MEDIA_DIRECT_UPLOAD_ENABLED: bool = False
+    MEDIA_CDN_BASE_URL: str | None = None
+    MEDIA_ORIGINAL_PUBLIC: bool = False
+    MEDIA_PRESIGN_TTL_SECONDS: int = 900
+    MEDIA_UPLOAD_RESERVATION_TTL_SECONDS: int = 3600
+    MEDIA_MAX_INCOMPLETE_UPLOADS_PER_USER: int = 20
+    MEDIA_DIRECT_UPLOAD_INITIATE_PER_MINUTE: int = 30
+    MEDIA_STORAGE_CLEANUP_BATCH: int = 50
+    MEDIA_STORAGE_CLEANUP_MAX_ATTEMPTS: int = 5
+    MEDIA_UPLOAD_CLEANUP_BATCH: int = 100
+
+    def media_job_retry_backoff_list(self) -> list[int]:
+        raw = (self.MEDIA_JOB_RETRY_BACKOFF_SECONDS or "").strip()
+        if not raw:
+            return [60]
+        out: list[int] = []
+        for part in raw.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                out.append(max(1, int(part)))
+            except ValueError:
+                continue
+        return out or [60]
+
     @computed_field
     @property
     def DATABASE_URL(self) -> str:
@@ -57,6 +133,17 @@ class Settings(BaseSettings):
         return (
             f"{ASYNC_DATABASE_DRIVER}://{user}:{password}"
             f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+    @computed_field
+    @property
+    def DATABASE_READ_URL(self) -> str:
+        host = (self.POSTGRES_READ_SERVER or self.POSTGRES_SERVER).strip()
+        user = quote_plus(self.POSTGRES_USER)
+        password = quote_plus(self.POSTGRES_PASSWORD)
+        return (
+            f"{ASYNC_DATABASE_DRIVER}://{user}:{password}"
+            f"@{host}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
 

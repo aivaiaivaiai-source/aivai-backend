@@ -47,6 +47,10 @@ LISTING_CREATE_LIMITER = InMemoryRateLimiter(
     max_requests=LISTING_CREATE_MAX_REQUESTS,
     window_seconds=LISTING_CREATE_WINDOW_SECONDS,
 )
+MEDIA_UPLOAD_INITIATE_LIMITER = InMemoryRateLimiter(
+    max_requests=30,
+    window_seconds=60.0,
+)
 
 
 async def enforce_auth_ip_rate_limit(request: Request) -> None:

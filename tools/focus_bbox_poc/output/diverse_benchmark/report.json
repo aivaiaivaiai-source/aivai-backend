@@ -1,0 +1,1767 @@
+{
+  "summary": {
+    "model": "PekingU/rtdetr_r18vd_coco_o365",
+    "license": "Apache-2.0",
+    "manifest_entries": 45,
+    "processed": 45,
+    "gate_target": "\u226590\u201395% correct on car_present, ~0 wrong-object",
+    "car_present_total": 45,
+    "verdicts": {
+      "correct": 42,
+      "miss": 2,
+      "wrong": 1
+    },
+    "hit_rate_correct": 0.9333333333333333,
+    "wrong_rate": 0.022222222222222223,
+    "by_tag": {
+      "edge_crop": {
+        "correct": 36,
+        "miss": 2,
+        "wrong": 1
+      },
+      "multi_car": {
+        "correct": 37,
+        "miss": 2,
+        "wrong": 1
+      },
+      "vertical": {
+        "correct": 14,
+        "miss": 0,
+        "wrong": 0
+      },
+      "car_far": {
+        "correct": 16,
+        "miss": 1,
+        "wrong": 0
+      },
+      "car_close": {
+        "correct": 18,
+        "miss": 1,
+        "wrong": 1
+      },
+      "horizontal": {
+        "correct": 28,
+        "miss": 2,
+        "wrong": 1
+      },
+      "dark": {
+        "correct": 4,
+        "miss": 0,
+        "wrong": 0
+      },
+      "listing": {
+        "correct": 5,
+        "miss": 0,
+        "wrong": 0
+      }
+    },
+    "latency_ms": {
+      "mean": 454.18368222049645,
+      "p50": 428.10290001216345,
+      "p95": 594.7824999748264
+    },
+    "model_load_ms": 1277.1923000109382
+  },
+  "results": [
+    {
+      "id": "coco_162858",
+      "source": "coco_val2017",
+      "filename": "000000162858.jpg",
+      "car_present": true,
+      "tags": [
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        428,
+        640
+      ],
+      "inference_ms": 594.7824999748264,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.93 iou=0.90 area=8%",
+      "primary": {
+        "label": "car",
+        "score": 0.9332180023193359,
+        "bbox": {
+          "left": 0.11448598130841121,
+          "top": 0.5265625,
+          "width": 0.3621495327102804,
+          "height": 0.2171875
+        }
+      },
+      "vehicle_count": 18,
+      "top_labels": [
+        "car:0.95",
+        "car:0.93",
+        "car:0.91",
+        "person:0.89",
+        "traffic light:0.88"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_162858_000000162858.jpg"
+    },
+    {
+      "id": "coco_54967",
+      "source": "coco_val2017",
+      "filename": "000000054967.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        424,
+        640
+      ],
+      "inference_ms": 595.3980999765918,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.93 iou=0.93 area=1%",
+      "primary": {
+        "label": "car",
+        "score": 0.9296932220458984,
+        "bbox": {
+          "left": 0.49764150943396224,
+          "top": 0.675,
+          "width": 0.1320754716981132,
+          "height": 0.0671875
+        }
+      },
+      "vehicle_count": 21,
+      "top_labels": [
+        "car:0.93",
+        "car:0.90",
+        "car:0.82",
+        "person:0.82",
+        "car:0.79"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_54967_000000054967.jpg"
+    },
+    {
+      "id": "coco_266981",
+      "source": "coco_val2017",
+      "filename": "000000266981.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        426,
+        640
+      ],
+      "inference_ms": 459.5083999738563,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.36 iou=0.78 area=1%",
+      "primary": {
+        "label": "car",
+        "score": 0.36429956555366516,
+        "bbox": {
+          "left": 0.7605633802816901,
+          "top": 0.6359375,
+          "width": 0.1643192488262911,
+          "height": 0.0609375
+        }
+      },
+      "vehicle_count": 16,
+      "top_labels": [
+        "person:0.94",
+        "person:0.94",
+        "car:0.86",
+        "car:0.86",
+        "person:0.83"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_266981_000000266981.jpg"
+    },
+    {
+      "id": "coco_93154",
+      "source": "coco_val2017",
+      "filename": "000000093154.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        427,
+        640
+      ],
+      "inference_ms": 430.11549999937415,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.93 iou=0.90 area=1%",
+      "primary": {
+        "label": "car",
+        "score": 0.9320554137229919,
+        "bbox": {
+          "left": 0.3325526932084309,
+          "top": 0.425,
+          "width": 0.1592505854800937,
+          "height": 0.05625
+        }
+      },
+      "vehicle_count": 23,
+      "top_labels": [
+        "car:0.93",
+        "car:0.93",
+        "car:0.83",
+        "car:0.82",
+        "car:0.74"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_93154_000000093154.jpg"
+    },
+    {
+      "id": "coco_361142",
+      "source": "coco_val2017",
+      "filename": "000000361142.jpg",
+      "car_present": true,
+      "tags": [
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        463,
+        640
+      ],
+      "inference_ms": 412.9175000125542,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 iou=0.97 area=7%",
+      "primary": {
+        "label": "car",
+        "score": 0.9551900625228882,
+        "bbox": {
+          "left": 0.6220302375809935,
+          "top": 0.8015625,
+          "width": 0.3758099352051836,
+          "height": 0.1828125
+        }
+      },
+      "vehicle_count": 16,
+      "top_labels": [
+        "car:0.96",
+        "car:0.94",
+        "car:0.91",
+        "clock:0.88",
+        "car:0.87"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_361142_000000361142.jpg"
+    },
+    {
+      "id": "coco_521141",
+      "source": "coco_val2017",
+      "filename": "000000521141.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        375,
+        500
+      ],
+      "inference_ms": 435.4929999972228,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.92 iou=0.93 area=1%",
+      "primary": {
+        "label": "car",
+        "score": 0.9170950651168823,
+        "bbox": {
+          "left": 0.8133333333333334,
+          "top": 0.48,
+          "width": 0.184,
+          "height": 0.066
+        }
+      },
+      "vehicle_count": 18,
+      "top_labels": [
+        "car:0.94",
+        "person:0.94",
+        "person:0.92",
+        "car:0.92",
+        "person:0.84"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_521141_000000521141.jpg"
+    },
+    {
+      "id": "coco_336232",
+      "source": "coco_val2017",
+      "filename": "000000336232.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        427
+      ],
+      "inference_ms": 420.3296999912709,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.93 iou=0.88 area=23%",
+      "primary": {
+        "label": "car",
+        "score": 0.9332132339477539,
+        "bbox": {
+          "left": 0.5796875,
+          "top": 0.4613583138173302,
+          "width": 0.4203125,
+          "height": 0.5362997658079626
+        }
+      },
+      "vehicle_count": 44,
+      "top_labels": [
+        "car:0.94",
+        "bus:0.94",
+        "motorbike:0.94",
+        "car:0.93",
+        "person:0.92"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_336232_000000336232.jpg"
+    },
+    {
+      "id": "coco_460147",
+      "source": "coco_val2017",
+      "filename": "000000460147.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        424
+      ],
+      "inference_ms": 420.4448999953456,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.67 iou=0.93 area=4%",
+      "primary": {
+        "label": "car",
+        "score": 0.6686499714851379,
+        "bbox": {
+          "left": 0.8359375,
+          "top": 0.6273584905660378,
+          "width": 0.1625,
+          "height": 0.25707547169811323
+        }
+      },
+      "vehicle_count": 44,
+      "top_labels": [
+        "car:0.92",
+        "car:0.90",
+        "car:0.87",
+        "car:0.85",
+        "car:0.84"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_460147_000000460147.jpg"
+    },
+    {
+      "id": "coco_52412",
+      "source": "coco_val2017",
+      "filename": "000000052412.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        426
+      ],
+      "inference_ms": 433.4292999992613,
+      "verdict": "wrong",
+      "verdict_reason": "wrong vehicle iou=0.00; top non-veh?",
+      "primary": {
+        "label": "car",
+        "score": 0.36640816926956177,
+        "bbox": {
+          "left": 0.0625,
+          "top": 0.9577464788732394,
+          "width": 0.04375,
+          "height": 0.03990610328638498
+        }
+      },
+      "vehicle_count": 20,
+      "top_labels": [
+        "aeroplane:0.93",
+        "truck:0.37",
+        "car:0.37",
+        "car:0.35",
+        "car:0.33"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_52412_000000052412.jpg"
+    },
+    {
+      "id": "coco_210273",
+      "source": "coco_val2017",
+      "filename": "000000210273.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        428
+      ],
+      "inference_ms": 439.0012999938335,
+      "verdict": "miss",
+      "verdict_reason": "weak overlap iou=0.16",
+      "primary": {
+        "label": "car",
+        "score": 0.47266456484794617,
+        "bbox": {
+          "left": 0.634375,
+          "top": 0.4602803738317757,
+          "width": 0.128125,
+          "height": 0.21728971962616822
+        }
+      },
+      "vehicle_count": 36,
+      "top_labels": [
+        "bus:0.94",
+        "bus:0.93",
+        "car:0.90",
+        "car:0.89",
+        "bus:0.89"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_210273_000000210273.jpg"
+    },
+    {
+      "id": "coco_373353",
+      "source": "coco_val2017",
+      "filename": "000000373353.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        428
+      ],
+      "inference_ms": 428.23520000092685,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.81 iou=0.92 area=3%",
+      "primary": {
+        "label": "car",
+        "score": 0.8094284534454346,
+        "bbox": {
+          "left": 0.0,
+          "top": 0.7009345794392523,
+          "width": 0.15625,
+          "height": 0.1939252336448598
+        }
+      },
+      "vehicle_count": 33,
+      "top_labels": [
+        "car:0.96",
+        "person:0.95",
+        "bus:0.92",
+        "car:0.92",
+        "person:0.92"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_373353_000000373353.jpg"
+    },
+    {
+      "id": "coco_350023",
+      "source": "coco_val2017",
+      "filename": "000000350023.jpg",
+      "car_present": true,
+      "tags": [
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 478.4473000036087,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.74 iou=0.90 area=0%",
+      "primary": {
+        "label": "car",
+        "score": 0.7364636063575745,
+        "bbox": {
+          "left": 0.6203125,
+          "top": 0.8958333333333334,
+          "width": 0.053125,
+          "height": 0.06041666666666667
+        }
+      },
+      "vehicle_count": 27,
+      "top_labels": [
+        "car:0.83",
+        "car:0.82",
+        "car:0.82",
+        "car:0.80",
+        "car:0.79"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_350023_000000350023.jpg"
+    },
+    {
+      "id": "coco_400367",
+      "source": "coco_val2017",
+      "filename": "000000400367.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "dark",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        500,
+        333
+      ],
+      "inference_ms": 430.5395999981556,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.94 iou=0.91 area=6%",
+      "primary": {
+        "label": "car",
+        "score": 0.9399065971374512,
+        "bbox": {
+          "left": 0.018,
+          "top": 0.7237237237237237,
+          "width": 0.238,
+          "height": 0.2552552552552553
+        }
+      },
+      "vehicle_count": 16,
+      "top_labels": [
+        "car:0.94",
+        "car:0.90",
+        "car:0.90",
+        "car:0.85",
+        "car:0.82"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_400367_000000400367.jpg"
+    },
+    {
+      "id": "coco_121242",
+      "source": "coco_val2017",
+      "filename": "000000121242.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        429
+      ],
+      "inference_ms": 504.5877999800723,
+      "verdict": "miss",
+      "verdict_reason": "weak overlap iou=0.43",
+      "primary": {
+        "label": "car",
+        "score": 0.36424973607063293,
+        "bbox": {
+          "left": 0.8015625,
+          "top": 0.4405594405594406,
+          "width": 0.09375,
+          "height": 0.12121212121212122
+        }
+      },
+      "vehicle_count": 37,
+      "top_labels": [
+        "horse:0.96",
+        "person:0.89",
+        "person:0.80",
+        "car:0.73",
+        "car:0.67"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_121242_000000121242.jpg"
+    },
+    {
+      "id": "coco_263594",
+      "source": "coco_val2017",
+      "filename": "000000263594.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        500,
+        381
+      ],
+      "inference_ms": 418.8070000091102,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 iou=0.95 area=32%",
+      "primary": {
+        "label": "car",
+        "score": 0.9578089714050293,
+        "bbox": {
+          "left": 0.064,
+          "top": 0.37270341207349084,
+          "width": 0.86,
+          "height": 0.3753280839895013
+        }
+      },
+      "vehicle_count": 14,
+      "top_labels": [
+        "car:0.96",
+        "car:0.85",
+        "car:0.70",
+        "car:0.69",
+        "car:0.60"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_263594_000000263594.jpg"
+    },
+    {
+      "id": "coco_466156",
+      "source": "coco_val2017",
+      "filename": "000000466156.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        500,
+        375
+      ],
+      "inference_ms": 426.87429999932647,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.67 iou=0.89 area=99%",
+      "primary": {
+        "label": "car",
+        "score": 0.6711339354515076,
+        "bbox": {
+          "left": 0.0,
+          "top": 0.008,
+          "width": 1.0,
+          "height": 0.992
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "cat:0.95",
+        "car:0.77",
+        "car:0.67",
+        "car:0.57",
+        "umbrella:0.55"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_466156_000000466156.jpg"
+    },
+    {
+      "id": "coco_172330",
+      "source": "coco_val2017",
+      "filename": "000000172330.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 445.42490001185797,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 iou=0.98 area=58%",
+      "primary": {
+        "label": "car",
+        "score": 0.9653134942054749,
+        "bbox": {
+          "left": 0.1,
+          "top": 0.0,
+          "width": 0.896875,
+          "height": 0.64375
+        }
+      },
+      "vehicle_count": 3,
+      "top_labels": [
+        "car:0.97",
+        "car:0.95",
+        "car:0.89",
+        "dog:0.72",
+        "cat:0.50"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_172330_000000172330.jpg"
+    },
+    {
+      "id": "coco_183246",
+      "source": "coco_val2017",
+      "filename": "000000183246.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        500,
+        400
+      ],
+      "inference_ms": 418.0270000069868,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.60 iou=0.79 area=2%",
+      "primary": {
+        "label": "car",
+        "score": 0.5966386795043945,
+        "bbox": {
+          "left": 0.648,
+          "top": 0.5975,
+          "width": 0.094,
+          "height": 0.2125
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "truck:0.92",
+        "traffic light:0.86",
+        "traffic light:0.80",
+        "traffic light:0.79",
+        "traffic light:0.78"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_183246_000000183246.jpg"
+    },
+    {
+      "id": "coco_167122",
+      "source": "coco_val2017",
+      "filename": "000000167122.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "dark",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 703.7326999998186,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.64 iou=0.79 area=58%",
+      "primary": {
+        "label": "car",
+        "score": 0.6366379857063293,
+        "bbox": {
+          "left": 0.0546875,
+          "top": 0.34375,
+          "width": 0.9046875,
+          "height": 0.6458333333333334
+        }
+      },
+      "vehicle_count": 2,
+      "top_labels": [
+        "car:0.64",
+        "traffic light:0.34",
+        "car:0.33",
+        "traffic light:0.27",
+        "traffic light:0.27"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_167122_000000167122.jpg"
+    },
+    {
+      "id": "coco_78823",
+      "source": "coco_val2017",
+      "filename": "000000078823.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 523.2943000155501,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.90 iou=0.97 area=48%",
+      "primary": {
+        "label": "car",
+        "score": 0.9007163047790527,
+        "bbox": {
+          "left": 0.0234375,
+          "top": 0.33125,
+          "width": 0.73125,
+          "height": 0.6604166666666667
+        }
+      },
+      "vehicle_count": 5,
+      "top_labels": [
+        "dog:0.96",
+        "car:0.95",
+        "car:0.90",
+        "car:0.89",
+        "pottedplant:0.49"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_78823_000000078823.jpg"
+    },
+    {
+      "id": "coco_322864",
+      "source": "coco_val2017",
+      "filename": "000000322864.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        427,
+        640
+      ],
+      "inference_ms": 744.7853999910876,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.80 iou=0.97 area=35%",
+      "primary": {
+        "label": "car",
+        "score": 0.8023577928543091,
+        "bbox": {
+          "left": 0.0,
+          "top": 0.5875,
+          "width": 0.9976580796252927,
+          "height": 0.346875
+        }
+      },
+      "vehicle_count": 11,
+      "top_labels": [
+        "car:0.85",
+        "car:0.80",
+        "car:0.80",
+        "person:0.79",
+        "car:0.65"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_322864_000000322864.jpg"
+    },
+    {
+      "id": "coco_383289",
+      "source": "coco_val2017",
+      "filename": "000000383289.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        444
+      ],
+      "inference_ms": 403.20950001478195,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.75 iou=0.94 area=35%",
+      "primary": {
+        "label": "car",
+        "score": 0.7463527917861938,
+        "bbox": {
+          "left": 0.0,
+          "top": 0.3581081081081081,
+          "width": 0.5625,
+          "height": 0.6238738738738738
+        }
+      },
+      "vehicle_count": 9,
+      "top_labels": [
+        "person:0.93",
+        "car:0.75",
+        "car:0.73",
+        "cell phone:0.60",
+        "car:0.36"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_383289_000000383289.jpg"
+    },
+    {
+      "id": "coco_442456",
+      "source": "coco_val2017",
+      "filename": "000000442456.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        356
+      ],
+      "inference_ms": 424.68860000371933,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.52 iou=0.96 area=33%",
+      "primary": {
+        "label": "car",
+        "score": 0.5212172269821167,
+        "bbox": {
+          "left": 0.321875,
+          "top": 0.18258426966292135,
+          "width": 0.65,
+          "height": 0.5084269662921348
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "person:0.95",
+        "person:0.93",
+        "car:0.69",
+        "car:0.52",
+        "truck:0.51"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_442456_000000442456.jpg"
+    },
+    {
+      "id": "coco_542625",
+      "source": "coco_val2017",
+      "filename": "000000542625.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 416.0478000121657,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.95 iou=0.98 area=29%",
+      "primary": {
+        "label": "car",
+        "score": 0.9515337347984314,
+        "bbox": {
+          "left": 0.446875,
+          "top": 0.46458333333333335,
+          "width": 0.5515625,
+          "height": 0.5291666666666667
+        }
+      },
+      "vehicle_count": 6,
+      "top_labels": [
+        "car:0.95",
+        "car:0.95",
+        "car:0.95",
+        "bird:0.94",
+        "parking meter:0.91"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_542625_000000542625.jpg"
+    },
+    {
+      "id": "coco_55150",
+      "source": "coco_val2017",
+      "filename": "000000055150.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        426
+      ],
+      "inference_ms": 417.4838000035379,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.71 iou=0.90 area=32%",
+      "primary": {
+        "label": "car",
+        "score": 0.7120141983032227,
+        "bbox": {
+          "left": 0.6734375,
+          "top": 0.0,
+          "width": 0.325,
+          "height": 0.9929577464788732
+        }
+      },
+      "vehicle_count": 26,
+      "top_labels": [
+        "person:0.90",
+        "car:0.85",
+        "person:0.85",
+        "suitcase:0.83",
+        "car:0.75"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_55150_000000055150.jpg"
+    },
+    {
+      "id": "coco_526392",
+      "source": "coco_val2017",
+      "filename": "000000526392.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        500,
+        333
+      ],
+      "inference_ms": 428.10290001216345,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.92 iou=0.93 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.9163452386856079,
+        "bbox": {
+          "left": 0.29,
+          "top": 0.5345345345345346,
+          "width": 0.612,
+          "height": 0.4624624624624625
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.92",
+        "car:0.84",
+        "traffic light:0.81",
+        "car:0.79",
+        "traffic light:0.62"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_526392_000000526392.jpg"
+    },
+    {
+      "id": "coco_9891",
+      "source": "coco_val2017",
+      "filename": "000000009891.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 438.7420999992173,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.87 iou=0.72 area=20%",
+      "primary": {
+        "label": "car",
+        "score": 0.8721345663070679,
+        "bbox": {
+          "left": 0.5625,
+          "top": 0.18958333333333333,
+          "width": 0.4359375,
+          "height": 0.45625
+        }
+      },
+      "vehicle_count": 6,
+      "top_labels": [
+        "person:0.95",
+        "person:0.93",
+        "suitcase:0.89",
+        "car:0.87",
+        "suitcase:0.84"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_9891_000000009891.jpg"
+    },
+    {
+      "id": "coco_454661",
+      "source": "coco_val2017",
+      "filename": "000000454661.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "dark",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        427
+      ],
+      "inference_ms": 423.72710001654923,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 iou=0.98 area=25%",
+      "primary": {
+        "label": "car",
+        "score": 0.966478168964386,
+        "bbox": {
+          "left": 0.3859375,
+          "top": 0.42857142857142855,
+          "width": 0.6125,
+          "height": 0.41217798594847777
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.97",
+        "car:0.92",
+        "car:0.92",
+        "traffic light:0.87",
+        "traffic light:0.86"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_454661_000000454661.jpg"
+    },
+    {
+      "id": "coco_58539",
+      "source": "coco_val2017",
+      "filename": "000000058539.jpg",
+      "car_present": true,
+      "tags": [
+        "car_close",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        421
+      ],
+      "inference_ms": 416.8925999838393,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 iou=0.97 area=23%",
+      "primary": {
+        "label": "car",
+        "score": 0.955181360244751,
+        "bbox": {
+          "left": 0.6453125,
+          "top": 0.332541567695962,
+          "width": 0.353125,
+          "height": 0.6579572446555819
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "person:0.97",
+        "car:0.96",
+        "person:0.95",
+        "tie:0.92",
+        "person:0.91"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_58539_000000058539.jpg"
+    },
+    {
+      "id": "coco_412531",
+      "source": "coco_val2017",
+      "filename": "000000412531.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "dark",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 414.2979000171181,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.78 iou=0.97 area=6%",
+      "primary": {
+        "label": "car",
+        "score": 0.7844094634056091,
+        "bbox": {
+          "left": 0.709375,
+          "top": 0.5291666666666667,
+          "width": 0.2828125,
+          "height": 0.2125
+        }
+      },
+      "vehicle_count": 9,
+      "top_labels": [
+        "parking meter:0.94",
+        "car:0.90",
+        "car:0.87",
+        "car:0.87",
+        "car:0.82"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_412531_000000412531.jpg"
+    },
+    {
+      "id": "coco_39484",
+      "source": "coco_val2017",
+      "filename": "000000039484.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        437
+      ],
+      "inference_ms": 421.81539998273365,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.90 iou=0.94 area=6%",
+      "primary": {
+        "label": "car",
+        "score": 0.8954192399978638,
+        "bbox": {
+          "left": 0.0546875,
+          "top": 0.8306636155606407,
+          "width": 0.3640625,
+          "height": 0.16704805491990846
+        }
+      },
+      "vehicle_count": 17,
+      "top_labels": [
+        "car:0.95",
+        "car:0.92",
+        "car:0.90",
+        "car:0.90",
+        "car:0.89"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_39484_000000039484.jpg"
+    },
+    {
+      "id": "coco_191013",
+      "source": "coco_val2017",
+      "filename": "000000191013.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        474,
+        640
+      ],
+      "inference_ms": 418.9929999993183,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.94 iou=0.95 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.9352999329566956,
+        "bbox": {
+          "left": 0.09282700421940929,
+          "top": 0.859375,
+          "width": 0.379746835443038,
+          "height": 0.1359375
+        }
+      },
+      "vehicle_count": 8,
+      "top_labels": [
+        "car:0.94",
+        "clock:0.93",
+        "truck:0.91",
+        "car:0.90",
+        "car:0.79"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_191013_000000191013.jpg"
+    },
+    {
+      "id": "coco_192670",
+      "source": "coco_val2017",
+      "filename": "000000192670.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        433
+      ],
+      "inference_ms": 423.3169000071939,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.61 iou=0.88 area=6%",
+      "primary": {
+        "label": "car",
+        "score": 0.6077709794044495,
+        "bbox": {
+          "left": 0.3421875,
+          "top": 0.21478060046189376,
+          "width": 0.296875,
+          "height": 0.20323325635103925
+        }
+      },
+      "vehicle_count": 10,
+      "top_labels": [
+        "person:0.95",
+        "person:0.95",
+        "baseball glove:0.91",
+        "person:0.90",
+        "person:0.90"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_192670_000000192670.jpg"
+    },
+    {
+      "id": "coco_165039",
+      "source": "coco_val2017",
+      "filename": "000000165039.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        427
+      ],
+      "inference_ms": 414.2721999960486,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.93 iou=0.95 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.9334463477134705,
+        "bbox": {
+          "left": 0.5953125,
+          "top": 0.3770491803278688,
+          "width": 0.2859375,
+          "height": 0.1873536299765808
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "bus:0.96",
+        "car:0.93",
+        "car:0.89",
+        "car:0.81",
+        "traffic light:0.80"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_165039_000000165039.jpg"
+    },
+    {
+      "id": "coco_499181",
+      "source": "coco_val2017",
+      "filename": "000000499181.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 492.55940000875853,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.94 iou=0.94 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.9412383437156677,
+        "bbox": {
+          "left": 0.03125,
+          "top": 0.8145833333333333,
+          "width": 0.26875,
+          "height": 0.17708333333333334
+        }
+      },
+      "vehicle_count": 15,
+      "top_labels": [
+        "car:0.94",
+        "car:0.94",
+        "car:0.91",
+        "traffic light:0.86",
+        "traffic light:0.76"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_499181_000000499181.jpg"
+    },
+    {
+      "id": "coco_553511",
+      "source": "coco_val2017",
+      "filename": "000000553511.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        500,
+        333
+      ],
+      "inference_ms": 408.36050000507385,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.93 iou=0.95 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.932074785232544,
+        "bbox": {
+          "left": 0.098,
+          "top": 0.7807807807807807,
+          "width": 0.284,
+          "height": 0.17117117117117117
+        }
+      },
+      "vehicle_count": 9,
+      "top_labels": [
+        "car:0.93",
+        "car:0.91",
+        "car:0.90",
+        "person:0.86",
+        "traffic light:0.82"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_553511_000000553511.jpg"
+    },
+    {
+      "id": "coco_301376",
+      "source": "coco_val2017",
+      "filename": "000000301376.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "multi_car",
+        "vertical"
+      ],
+      "image_size": [
+        333,
+        500
+      ],
+      "inference_ms": 418.9532999880612,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.89 iou=0.92 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.8850533962249756,
+        "bbox": {
+          "left": 0.0,
+          "top": 0.78,
+          "width": 0.2882882882882883,
+          "height": 0.172
+        }
+      },
+      "vehicle_count": 17,
+      "top_labels": [
+        "person:0.89",
+        "car:0.89",
+        "person:0.84",
+        "traffic light:0.83",
+        "traffic light:0.82"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_301376_000000301376.jpg"
+    },
+    {
+      "id": "coco_67616",
+      "source": "coco_val2017",
+      "filename": "000000067616.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        480
+      ],
+      "inference_ms": 430.78070000046864,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.91 iou=0.97 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.9084755778312683,
+        "bbox": {
+          "left": 0.6109375,
+          "top": 0.7104166666666667,
+          "width": 0.2296875,
+          "height": 0.2125
+        }
+      },
+      "vehicle_count": 8,
+      "top_labels": [
+        "person:0.95",
+        "car:0.91",
+        "car:0.90",
+        "fire hydrant:0.85",
+        "chair:0.82"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_67616_000000067616.jpg"
+    },
+    {
+      "id": "coco_504415",
+      "source": "coco_val2017",
+      "filename": "000000504415.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        427
+      ],
+      "inference_ms": 406.6084999940358,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.95 iou=0.88 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.9534319639205933,
+        "bbox": {
+          "left": 0.1234375,
+          "top": 0.4168618266978923,
+          "width": 0.3421875,
+          "height": 0.14285714285714285
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.95",
+        "person:0.95",
+        "car:0.95",
+        "car:0.94",
+        "sports ball:0.77"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_504415_000000504415.jpg"
+    },
+    {
+      "id": "coco_424162",
+      "source": "coco_val2017",
+      "filename": "000000424162.jpg",
+      "car_present": true,
+      "tags": [
+        "car_far",
+        "edge_crop",
+        "horizontal",
+        "multi_car"
+      ],
+      "image_size": [
+        640,
+        512
+      ],
+      "inference_ms": 391.5304999973159,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.92 iou=0.93 area=5%",
+      "primary": {
+        "label": "car",
+        "score": 0.9176346063613892,
+        "bbox": {
+          "left": 0.0,
+          "top": 0.34765625,
+          "width": 0.19375,
+          "height": 0.2421875
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "dog:0.96",
+        "person:0.93",
+        "car:0.92",
+        "person:0.90",
+        "car:0.83"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\coco_424162_000000424162.jpg"
+    },
+    {
+      "id": "listing_39_397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg",
+      "source": "aivai_listing",
+      "filename": "listing_397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg",
+      "car_present": true,
+      "tags": [
+        "listing",
+        "vertical"
+      ],
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 446.7475999845192,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.9654877185821533,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.3251953125
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.77",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\listing_39_397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg_listing_397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg"
+    },
+    {
+      "id": "listing_38_60e6038a-053f-43a8-96c2-f02101271713.jpg",
+      "source": "aivai_listing",
+      "filename": "listing_60e6038a-053f-43a8-96c2-f02101271713.jpg",
+      "car_present": true,
+      "tags": [
+        "listing",
+        "vertical"
+      ],
+      "image_size": [
+        370,
+        493
+      ],
+      "inference_ms": 411.4296999759972,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 area=44%",
+      "primary": {
+        "label": "car",
+        "score": 0.9586740732192993,
+        "bbox": {
+          "left": 0.08378378378378379,
+          "top": 0.3813387423935091,
+          "width": 0.8486486486486486,
+          "height": 0.5172413793103449
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.96",
+        "car:0.82",
+        "car:0.74",
+        "car:0.56",
+        "truck:0.34"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\listing_38_60e6038a-053f-43a8-96c2-f02101271713.jpg_listing_60e6038a-053f-43a8-96c2-f02101271713.jpg"
+    },
+    {
+      "id": "listing_26_5d4d1448-88c3-4f7e-8713-a7130760af74.jpg",
+      "source": "aivai_listing",
+      "filename": "listing_5d4d1448-88c3-4f7e-8713-a7130760af74.jpg",
+      "car_present": true,
+      "tags": [
+        "listing",
+        "vertical"
+      ],
+      "image_size": [
+        1079,
+        1440
+      ],
+      "inference_ms": 442.6550999924075,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=39%",
+      "primary": {
+        "label": "car",
+        "score": 0.965860903263092,
+        "bbox": {
+          "left": 0.11121408711770157,
+          "top": 0.35833333333333334,
+          "width": 0.7924003707136237,
+          "height": 0.48819444444444443
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.97",
+        "car:0.86",
+        "car:0.84",
+        "car:0.77",
+        "car:0.65"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\listing_26_5d4d1448-88c3-4f7e-8713-a7130760af74.jpg_listing_5d4d1448-88c3-4f7e-8713-a7130760af74.jpg"
+    },
+    {
+      "id": "listing_30_569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg",
+      "source": "aivai_listing",
+      "filename": "listing_569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg",
+      "car_present": true,
+      "tags": [
+        "listing",
+        "vertical"
+      ],
+      "image_size": [
+        1079,
+        1257
+      ],
+      "inference_ms": 433.6527000123169,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 area=44%",
+      "primary": {
+        "label": "car",
+        "score": 0.9640562534332275,
+        "bbox": {
+          "left": 0.1102873030583874,
+          "top": 0.33731105807478123,
+          "width": 0.794253938832252,
+          "height": 0.5592680986475735
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.96",
+        "car:0.87",
+        "car:0.84",
+        "car:0.82",
+        "car:0.65"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\listing_30_569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg_listing_569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg"
+    },
+    {
+      "id": "listing_27_ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg",
+      "source": "aivai_listing",
+      "filename": "listing_ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg",
+      "car_present": true,
+      "tags": [
+        "listing",
+        "vertical"
+      ],
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 529.2221999843605,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.965897262096405,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.32470703125
+        }
+      },
+      "vehicle_count": 13,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.82",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\diverse_benchmark\\overlays\\listing_27_ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg_listing_ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg"
+    }
+  ]
+}

@@ -1,0 +1,557 @@
+{
+  "summary": {
+    "model": "PekingU/rtdetr_r18vd_coco_o365",
+    "license": "Apache-2.0",
+    "category_filter": "transport-car-sale",
+    "manifest_unique": 34,
+    "downloaded_and_processed": 18,
+    "note": "Only reachable /media files; stale DB refs skipped.",
+    "verdicts": {
+      "correct": 13,
+      "miss": 5,
+      "wrong": 0
+    },
+    "hit_rate_correct": 0.7222222222222222,
+    "latency_ms": {
+      "mean": 602.693938889489,
+      "p50": 572.9572499985807,
+      "p95": 687.3401000048034
+    },
+    "model_load_ms": 2783.3162999886554
+  },
+  "results": [
+    {
+      "listing_id": 39,
+      "category": "transport-car-sale",
+      "filename": "397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg",
+      "url": "http://127.0.0.1:8000/media/397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 1047.077499999432,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.9654877185821533,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.3251953125,
+          "area_ratio": 0.2821651301518438
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.77",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\39_397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg"
+    },
+    {
+      "listing_id": 38,
+      "category": "transport-car-sale",
+      "filename": "60e6038a-053f-43a8-96c2-f02101271713.jpg",
+      "url": "http://127.0.0.1:8000/media/60e6038a-053f-43a8-96c2-f02101271713.jpg",
+      "image_size": [
+        370,
+        493
+      ],
+      "inference_ms": 518.5099000227638,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 area=44%",
+      "primary": {
+        "label": "car",
+        "score": 0.9586740732192993,
+        "bbox": {
+          "left": 0.08378378378378379,
+          "top": 0.3813387423935091,
+          "width": 0.8486486486486486,
+          "height": 0.5172413793103449,
+          "area_ratio": 0.43895619757688725
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.96",
+        "car:0.82",
+        "car:0.74",
+        "car:0.56",
+        "truck:0.34"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\38_60e6038a-053f-43a8-96c2-f02101271713.jpg"
+    },
+    {
+      "listing_id": 37,
+      "category": "transport-car-sale",
+      "filename": "d88cce19-b0f3-48a7-a42c-450f42177c59.jpg",
+      "url": "http://127.0.0.1:8000/media/d88cce19-b0f3-48a7-a42c-450f42177c59.jpg",
+      "image_size": [
+        1070,
+        818
+      ],
+      "inference_ms": 576.0821000149008,
+      "verdict": "miss",
+      "verdict_reason": "\u043d\u0435\u0442 vehicle; top=person",
+      "primary": null,
+      "vehicle_count": 0,
+      "top_labels": [
+        "person:0.91",
+        "stop sign:0.31"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\37_d88cce19-b0f3-48a7-a42c-450f42177c59.jpg"
+    },
+    {
+      "listing_id": 36,
+      "category": "transport-car-sale",
+      "filename": "636e3bdf-5408-4ff4-967d-81d588827b04.jpg",
+      "url": "http://127.0.0.1:8000/media/636e3bdf-5408-4ff4-967d-81d588827b04.jpg",
+      "image_size": [
+        635,
+        597
+      ],
+      "inference_ms": 562.5518999877386,
+      "verdict": "miss",
+      "verdict_reason": "\u043d\u0435\u0442 vehicle; top=person",
+      "primary": null,
+      "vehicle_count": 0,
+      "top_labels": [
+        "person:0.56",
+        "person:0.33",
+        "person:0.28"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\36_636e3bdf-5408-4ff4-967d-81d588827b04.jpg"
+    },
+    {
+      "listing_id": 29,
+      "category": "transport-car-sale",
+      "filename": "6624e7a7-a98b-4833-9c26-c5464da7fe15.jpg",
+      "url": "http://127.0.0.1:8000/media/6624e7a7-a98b-4833-9c26-c5464da7fe15.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 591.7929999995977,
+      "verdict": "miss",
+      "verdict_reason": "\u043d\u0435\u0442 vehicle; top=person",
+      "primary": null,
+      "vehicle_count": 0,
+      "top_labels": [
+        "person:0.93",
+        "person:0.83",
+        "person:0.26"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\29_6624e7a7-a98b-4833-9c26-c5464da7fe15.jpg"
+    },
+    {
+      "listing_id": 28,
+      "category": "transport-car-sale",
+      "filename": "7b094cfe-7f5c-45e1-a1d2-91b62f2a878f.jpg",
+      "url": "http://127.0.0.1:8000/media/7b094cfe-7f5c-45e1-a1d2-91b62f2a878f.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 581.2762999848928,
+      "verdict": "miss",
+      "verdict_reason": "\u043d\u0435\u0442 vehicle; top=person",
+      "primary": null,
+      "vehicle_count": 0,
+      "top_labels": [
+        "person:0.94",
+        "person:0.83",
+        "person:0.26",
+        "person:0.26"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\28_7b094cfe-7f5c-45e1-a1d2-91b62f2a878f.jpg"
+    },
+    {
+      "listing_id": 26,
+      "category": "transport-car-sale",
+      "filename": "5d4d1448-88c3-4f7e-8713-a7130760af74.jpg",
+      "url": "http://127.0.0.1:8000/media/5d4d1448-88c3-4f7e-8713-a7130760af74.jpg",
+      "image_size": [
+        1079,
+        1440
+      ],
+      "inference_ms": 554.8852999927476,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=39%",
+      "primary": {
+        "label": "car",
+        "score": 0.965860903263092,
+        "bbox": {
+          "left": 0.11121408711770157,
+          "top": 0.35833333333333334,
+          "width": 0.7924003707136237,
+          "height": 0.48819444444444443,
+          "area_ratio": 0.3868454587581094
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.97",
+        "car:0.86",
+        "car:0.84",
+        "car:0.77",
+        "car:0.65"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\26_5d4d1448-88c3-4f7e-8713-a7130760af74.jpg"
+    },
+    {
+      "listing_id": 35,
+      "category": "transport-car-sale",
+      "filename": "71c05d58-7045-4968-a868-ee3a06e00fe1.jpg",
+      "url": "http://127.0.0.1:8000/media/71c05d58-7045-4968-a868-ee3a06e00fe1.jpg",
+      "image_size": [
+        370,
+        493
+      ],
+      "inference_ms": 549.8669999942649,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 area=44%",
+      "primary": {
+        "label": "car",
+        "score": 0.9586740732192993,
+        "bbox": {
+          "left": 0.08378378378378379,
+          "top": 0.3813387423935091,
+          "width": 0.8486486486486486,
+          "height": 0.5172413793103449,
+          "area_ratio": 0.43895619757688725
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.96",
+        "car:0.82",
+        "car:0.74",
+        "car:0.56",
+        "truck:0.34"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\35_71c05d58-7045-4968-a868-ee3a06e00fe1.jpg"
+    },
+    {
+      "listing_id": 34,
+      "category": "transport-car-sale",
+      "filename": "506dbdc7-f45b-40ba-bd40-5dda832f39fe.jpg",
+      "url": "http://127.0.0.1:8000/media/506dbdc7-f45b-40ba-bd40-5dda832f39fe.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 569.8323999822605,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.9654877185821533,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.3251953125,
+          "area_ratio": 0.2821651301518438
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.77",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\34_506dbdc7-f45b-40ba-bd40-5dda832f39fe.jpg"
+    },
+    {
+      "listing_id": 33,
+      "category": "transport-car-sale",
+      "filename": "812d21cd-3cdc-4873-a95e-16ac02a60863.jpg",
+      "url": "http://127.0.0.1:8000/media/812d21cd-3cdc-4873-a95e-16ac02a60863.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 589.0573000069708,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.9654877185821533,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.3251953125,
+          "area_ratio": 0.2821651301518438
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.77",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\33_812d21cd-3cdc-4873-a95e-16ac02a60863.jpg"
+    },
+    {
+      "listing_id": 32,
+      "category": "transport-car-sale",
+      "filename": "77045449-1eaf-473d-a98c-9f04259864cd.jpg",
+      "url": "http://127.0.0.1:8000/media/77045449-1eaf-473d-a98c-9f04259864cd.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 687.3401000048034,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.9654877185821533,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.3251953125,
+          "area_ratio": 0.2821651301518438
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.77",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\32_77045449-1eaf-473d-a98c-9f04259864cd.jpg"
+    },
+    {
+      "listing_id": 31,
+      "category": "transport-car-sale",
+      "filename": "d4751be6-fbd1-40c1-8571-8f0999f61c2d.jpg",
+      "url": "http://127.0.0.1:8000/media/d4751be6-fbd1-40c1-8571-8f0999f61c2d.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 586.5265000029467,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.9654877185821533,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.3251953125,
+          "area_ratio": 0.2821651301518438
+        }
+      },
+      "vehicle_count": 12,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.77",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\31_d4751be6-fbd1-40c1-8571-8f0999f61c2d.jpg"
+    },
+    {
+      "listing_id": 30,
+      "category": "transport-car-sale",
+      "filename": "569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg",
+      "url": "http://127.0.0.1:8000/media/569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg",
+      "image_size": [
+        1079,
+        1257
+      ],
+      "inference_ms": 541.3206999946851,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 area=44%",
+      "primary": {
+        "label": "car",
+        "score": 0.9640562534332275,
+        "bbox": {
+          "left": 0.1102873030583874,
+          "top": 0.33731105807478123,
+          "width": 0.794253938832252,
+          "height": 0.5592680986475735,
+          "area_ratio": 0.44420089021405984
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.96",
+        "car:0.87",
+        "car:0.84",
+        "car:0.82",
+        "car:0.65"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\30_569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg"
+    },
+    {
+      "listing_id": 30,
+      "category": "transport-car-sale",
+      "filename": "c2304556-8a7e-4f74-a8ac-93fc77b6e77c.jpg",
+      "url": "http://127.0.0.1:8000/media/c2304556-8a7e-4f74-a8ac-93fc77b6e77c.jpg",
+      "image_size": [
+        370,
+        493
+      ],
+      "inference_ms": 584.3123999948148,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 area=44%",
+      "primary": {
+        "label": "car",
+        "score": 0.9586740732192993,
+        "bbox": {
+          "left": 0.08378378378378379,
+          "top": 0.3813387423935091,
+          "width": 0.8486486486486486,
+          "height": 0.5172413793103449,
+          "area_ratio": 0.43895619757688725
+        }
+      },
+      "vehicle_count": 7,
+      "top_labels": [
+        "car:0.96",
+        "car:0.82",
+        "car:0.74",
+        "car:0.56",
+        "truck:0.34"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\30_c2304556-8a7e-4f74-a8ac-93fc77b6e77c.jpg"
+    },
+    {
+      "listing_id": 27,
+      "category": "transport-car-sale",
+      "filename": "ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg",
+      "url": "http://127.0.0.1:8000/media/ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg",
+      "image_size": [
+        922,
+        2048
+      ],
+      "inference_ms": 606.3926999922842,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=28%",
+      "primary": {
+        "label": "car",
+        "score": 0.965897262096405,
+        "bbox": {
+          "left": 0.08026030368763558,
+          "top": 0.34814453125,
+          "width": 0.8676789587852495,
+          "height": 0.32470703125,
+          "area_ratio": 0.2817414587852495
+        }
+      },
+      "vehicle_count": 13,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.82",
+        "car:0.68"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\27_ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg"
+    },
+    {
+      "listing_id": 25,
+      "category": "transport-car-sale",
+      "filename": "db3273bf-9d1e-466a-a2c9-4a04cc162260.jpg",
+      "url": "http://127.0.0.1:8000/media/db3273bf-9d1e-466a-a2c9-4a04cc162260.jpg",
+      "image_size": [
+        1079,
+        1257
+      ],
+      "inference_ms": 568.9234000165015,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.96 area=44%",
+      "primary": {
+        "label": "car",
+        "score": 0.9635612368583679,
+        "bbox": {
+          "left": 0.1102873030583874,
+          "top": 0.33731105807478123,
+          "width": 0.794253938832252,
+          "height": 0.5592680986475735,
+          "area_ratio": 0.44420089021405984
+        }
+      },
+      "vehicle_count": 8,
+      "top_labels": [
+        "car:0.96",
+        "car:0.86",
+        "car:0.85",
+        "car:0.81",
+        "car:0.65"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\25_db3273bf-9d1e-466a-a2c9-4a04cc162260.jpg"
+    },
+    {
+      "listing_id": 24,
+      "category": "transport-car-sale",
+      "filename": "9f3bf53a-ee3d-488c-b316-674e586b669b.jpg",
+      "url": "http://127.0.0.1:8000/media/9f3bf53a-ee3d-488c-b316-674e586b669b.jpg",
+      "image_size": [
+        2048,
+        922
+      ],
+      "inference_ms": 563.1900000153109,
+      "verdict": "miss",
+      "verdict_reason": "\u043d\u0435\u0442 vehicle; top=person",
+      "primary": null,
+      "vehicle_count": 0,
+      "top_labels": [
+        "person:0.94",
+        "person:0.85"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\24_9f3bf53a-ee3d-488c-b316-674e586b669b.jpg"
+    },
+    {
+      "listing_id": 23,
+      "category": "transport-car-sale",
+      "filename": "2a49837b-39b1-482f-bb59-f60cd325575e.jpg",
+      "url": "http://127.0.0.1:8000/media/2a49837b-39b1-482f-bb59-f60cd325575e.jpg",
+      "image_size": [
+        2048,
+        922
+      ],
+      "inference_ms": 569.5524000038859,
+      "verdict": "correct",
+      "verdict_reason": "car conf=0.97 area=9%",
+      "primary": {
+        "label": "car",
+        "score": 0.9657193422317505,
+        "bbox": {
+          "left": 0.0361328125,
+          "top": 0.7744034707158352,
+          "width": 0.390625,
+          "height": 0.22559652928416485,
+          "area_ratio": 0.0881236442516269
+        }
+      },
+      "vehicle_count": 13,
+      "top_labels": [
+        "car:0.97",
+        "car:0.90",
+        "car:0.88",
+        "car:0.80",
+        "car:0.70"
+      ],
+      "overlay_path": "tools\\focus_bbox_poc\\output\\overlays\\23_2a49837b-39b1-482f-bb59-f60cd325575e.jpg"
+    }
+  ]
+}

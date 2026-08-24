@@ -7,8 +7,6 @@ from app.db.base_class import Base, TimestampMixin
 
 
 class AiSearchMatch(Base, TimestampMixin):
-    """Dedupes listing notifications per search task."""
-
     __tablename__ = "ai_search_matches"
     __table_args__ = (
         UniqueConstraint("task_id", "listing_id", name="uq_ai_search_matches_task_listing"),

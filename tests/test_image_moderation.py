@@ -9,7 +9,8 @@ import pytest
 
 from app.models.enums import ListingStatus
 from app.models.image_moderation_enums import ImageModerationVerdict, MediaModerationStatus
-from app.schemas.image_moderation import ImageClassificationInput
+from app.models.media_enums import MediaLifecycleStatus
+from app.schemas.image_moderation import ImageClassificationInput, ImageModerationOutcome
 from app.schemas.user import UserRead
 from app.schemas.voice import VoiceIntent
 from app.services.image_moderation_pipeline import ImageModerationPipeline
@@ -260,6 +261,7 @@ async def test_media_service_add_images_returns_media_read_list() -> None:
     listing = SimpleNamespace(id=1, owner_id=2, images=[])
     repo_media = MagicMock()
     repo_media.list_by_listing = AsyncMock(return_value=[])
+    repo_media.get_by_listing_and_client_upload_id = AsyncMock(return_value=None)
     repo_media.create = AsyncMock(
         side_effect=lambda row: SimpleNamespace(
             id=99,
@@ -272,6 +274,7 @@ async def test_media_service_add_images_returns_media_read_list() -> None:
             moderated_at=None,
         ),
     )
+    repo_media.delete = AsyncMock(return_value=True)
     repo_media.get_by_id = AsyncMock(
         return_value=SimpleNamespace(
             id=99,
@@ -279,19 +282,73 @@ async def test_media_service_add_images_returns_media_read_list() -> None:
             url="/media/x.jpg",
             order=0,
             is_placeholder=False,
+            lifecycle_status=MediaLifecycleStatus.ready,
+            client_upload_id=None,
+            original_url="/media/x.jpg",
+            display_url="/media/x.jpg",
+            feed_url=None,
+            thumb_url=None,
+            pipeline_version=None,
+            attempt_count=0,
+            error_code=None,
+            processed_at=datetime.now(UTC),
             moderation_status=MediaModerationStatus.approved,
             moderation_reason=None,
             moderated_at=datetime.now(UTC),
+            focus_bbox_left=None,
+            focus_bbox_top=None,
+            focus_bbox_width=None,
+            focus_bbox_height=None,
+            focus_confidence=None,
+        ),
+    )
+    repo_media.update = AsyncMock(
+        return_value=SimpleNamespace(
+            id=99,
+            listing_id=1,
+            url="/media/x.jpg",
+            order=0,
+            is_placeholder=False,
+            lifecycle_status=MediaLifecycleStatus.ready,
+            client_upload_id=None,
+            original_url="/media/x.jpg",
+            display_url="/media/x.jpg",
+            feed_url=None,
+            thumb_url=None,
+            pipeline_version=None,
+            attempt_count=0,
+            error_code=None,
+            processed_at=datetime.now(UTC),
+            moderation_status=MediaModerationStatus.approved,
+            moderation_reason=None,
+            moderated_at=datetime.now(UTC),
+            focus_bbox_left=None,
+            focus_bbox_top=None,
+            focus_bbox_width=None,
+            focus_bbox_height=None,
+            focus_confidence=None,
         ),
     )
     repo_listing = MagicMock()
     repo_listing.get_by_id = AsyncMock(return_value=listing)
     storage = MagicMock()
-    storage.save_image = MagicMock(return_value="/media/x.jpg")
+    storage.validate_image = MagicMock(return_value=".jpg")
+    storage.put_bytes = MagicMock(return_value="/media/media/1/99/original.jpg")
+    storage.delete_key = MagicMock()
     pipeline = MagicMock()
-    pipeline.process_existing_media = AsyncMock()
+    pipeline.process_existing_media = AsyncMock(
+        return_value=ImageModerationOutcome(
+            media_id=99,
+            verdict=ImageModerationVerdict.ALLOW,
+            moderation_status=MediaModerationStatus.approved,
+            moderation_reason=None,
+            moderated_at=datetime.now(UTC),
+            blocked_from_listing=False,
+        ),
+    )
     session = MagicMock()
     session.commit = AsyncMock()
+    session.rollback = AsyncMock()
 
     svc = MediaService(
         session,

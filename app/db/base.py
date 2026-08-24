@@ -17,6 +17,9 @@ from app.models.vehicle import VehicleAlias, VehicleBrand, VehicleModel  # noqa:
 from app.models.favorite import Favorite  # noqa: F401
 from app.models.listing import Listing  # noqa: F401
 from app.models.media import Media  # noqa: F401
+from app.models.media_job import MediaJob  # noqa: F401
+from app.models.media_outbox import MediaOutbox  # noqa: F401
+from app.models.media_storage_cleanup import MediaStorageCleanup  # noqa: F401
 from app.models.message import Message  # noqa: F401
 from app.models.message_attachment import MessageAttachment  # noqa: F401
 from app.models.notification import Notification  # noqa: F401

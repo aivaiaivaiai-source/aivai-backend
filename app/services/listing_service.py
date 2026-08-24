@@ -94,15 +94,21 @@ class ListingService:
     async def _attach_placeholder_image(self, listing_id: int) -> None:
         from datetime import UTC, datetime
 
+        from app.models.media_enums import MediaLifecycleStatus
+
         self._session.add(
             Media(
                 listing_id=listing_id,
                 url=PLACEHOLDER_MEDIA_URL,
                 order=0,
                 is_placeholder=True,
+                lifecycle_status=MediaLifecycleStatus.ready,
+                original_url=PLACEHOLDER_MEDIA_URL,
+                display_url=PLACEHOLDER_MEDIA_URL,
                 moderation_status=MediaModerationStatus.approved,
                 moderation_reason=None,
                 moderated_at=datetime.now(UTC),
+                processed_at=datetime.now(UTC),
             ),
         )
         await self._session.flush()
@@ -159,8 +165,7 @@ class ListingService:
                 )
             if refreshed.status == ListingStatus.active:
                 await self._notifications.emit_saved_search_alerts_for_listing(refreshed)
-                if self._ai_search is not None:
-                    await self._ai_search.emit_matches_for_listing(refreshed)
+                await self._emit_ai_matches(refreshed)
             await self._session.commit()
         except AppException:
             await self._session.rollback()
@@ -190,6 +195,7 @@ class ListingService:
         self._ensure_owner(listing, actor_user_id)
 
         payload = data.model_dump(exclude_unset=True)
+        known_fields = payload.pop("fields", None)
         if "category_id" in payload:
             cat = await self._categories.get_by_id(payload["category_id"])
             if cat is None:
@@ -201,6 +207,14 @@ class ListingService:
         updated = await self._listings.update(listing_id, **payload)
         if updated is None:
             raise EntityNotFoundError("Listing", entity_id=listing_id)
+
+        category_id = payload.get("category_id", listing.category_id)
+        if known_fields is not None and self._field_values is not None:
+            await self._field_values.replace_from_known_fields(
+                listing_id=listing_id,
+                category_id=category_id,
+                known_fields=known_fields,
+            )
 
         try:
             await self._session.commit()
@@ -283,8 +297,7 @@ class ListingService:
 
         if target == ListingStatus.active:
             await self._notifications.emit_saved_search_alerts_for_listing(final)
-            if self._ai_search is not None:
-                await self._ai_search.emit_matches_for_listing(final)
+            await self._emit_ai_matches(final)
             try:
                 await self._session.commit()
             except Exception as exc:
@@ -420,3 +433,11 @@ class ListingService:
             items=[self._to_read(x) for x in rows],
             total=total,
         )
+
+    async def _emit_ai_matches(self, listing: Listing) -> None:
+        """Enqueue match work so publish HTTP path stays fast."""
+        if self._ai_search is None:
+            return
+        from app.services.ai_match_queue import enqueue_listing_for_ai_match
+
+        await enqueue_listing_for_ai_match(listing.id)

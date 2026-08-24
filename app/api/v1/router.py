@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     ai_agents,
+    ai_agents_ws,
     assistant,
     auth,
     categories,
@@ -56,3 +57,4 @@ api_router.include_router(
 api_router.include_router(voice.router, prefix="/voice", tags=["voice"])
 api_router.include_router(assistant.router, prefix="/assistant", tags=["assistant"])
 api_router.include_router(ai_agents.router, prefix="/ai-agents", tags=["ai-agents"])
+api_router.include_router(ai_agents_ws.router, prefix="/ai-agents", tags=["ai-agents"])

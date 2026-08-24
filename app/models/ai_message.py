@@ -1,11 +1,18 @@
 from __future__ import annotations
 
-from sqlalchemy import Enum as SQLEnum, ForeignKey, JSON, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from typing import TYPE_CHECKING, Any
+
+from sqlalchemy import Enum as SQLEnum, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import JSON
 
 from app.db.base_class import Base, TimestampMixin
+from app.models.ai_enums import AiMessageType
 from app.models.assistant_enums import AssistantMessageRole
-from app.models.enums import AiMessageType
+
+if TYPE_CHECKING:
+    from app.models.ai_session import AiSession
 
 
 class AiMessage(Base, TimestampMixin):
@@ -18,15 +25,22 @@ class AiMessage(Base, TimestampMixin):
         index=True,
     )
     role: Mapped[AssistantMessageRole] = mapped_column(
-        SQLEnum(AssistantMessageRole, name="assistant_message_role_enum", create_type=False),
+        SQLEnum(AssistantMessageRole, name="assistant_message_role_enum"),
         nullable=False,
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     message_type: Mapped[AiMessageType] = mapped_column(
         SQLEnum(AiMessageType, name="ai_message_type_enum"),
         nullable=False,
-        server_default=AiMessageType.text.value,
+        default=AiMessageType.text,
     )
-    metadata_json: Mapped[dict] = mapped_column(
-        JSON, nullable=False, server_default="{}",
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(
+        JSON().with_variant(JSONB, "postgresql"),
+        nullable=False,
+        default=dict,
+        server_default="{}",
     )
+    # Idempotency for match retries: unique per session when set.
+    dedupe_key: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    session: Mapped["AiSession"] = relationship("AiSession", back_populates="messages")

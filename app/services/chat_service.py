@@ -13,6 +13,8 @@ from app.core.exceptions import (
 from app.core.pagination import clamp_limit
 from app.models.chat import Chat
 from app.models.message import Message
+from app.models.media import Media
+from app.models.user import User
 from app.repositories.chat_repository import ChatRepository
 from app.repositories.listing_repository import ListingRepository
 from app.repositories.media_repository import MediaRepository
@@ -72,7 +74,11 @@ class ChatService:
     ) -> ChatRead:
         peer_user = chat.seller if chat.buyer_id == current_user_id else chat.buyer
         peer = (
-            ChatPeerRead(id=peer_user.id, full_name=peer_user.full_name)
+            ChatPeerRead(
+                id=peer_user.id,
+                full_name=peer_user.full_name,
+                last_login=peer_user.last_login,
+            )
             if peer_user is not None
             else None
         )
@@ -244,6 +250,10 @@ class ChatService:
         await self._messages.create(message)
         if unique_media_ids:
             await self._messages.add_attachments(message_id=message.id, media_ids=unique_media_ids)
+
+        sender = await self._session.get(User, current_user_id)
+        if sender is not None:
+            sender.last_login = datetime.now(UTC)
 
         try:
             await self._session.commit()

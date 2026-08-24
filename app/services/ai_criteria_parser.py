@@ -1,144 +1,181 @@
+"""Rule-based criteria extraction → normalized contract dict."""
+
 from __future__ import annotations
 
 import re
-from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from app.models.enums import AiAgentType, Currency
-
-
-_AGENT_DOMAIN_SLUGS: dict[AiAgentType, tuple[str, ...]] = {
-    AiAgentType.ai_realtor: (
-        "real-estate-sale",
-        "real-estate-rent",
-        "real-estate-commercial",
-    ),
-    AiAgentType.ai_auto: (
-        "transport-car-sale",
-        "transport-cars",
-    ),
-    AiAgentType.ai_hr: (
-        "jobs-vacancies",
-        "jobs-resume",
-    ),
-}
+from app.core.ai_search_criteria import (
+    BRAND_ALIASES,
+    MODEL_ALIASES,
+    MODEL_BRAND_HINT,
+    AiSearchCriteria,
+    Steering,
+    normalize_engine_volume,
+    normalize_model,
+)
 
 _PRICE_RE = re.compile(
-    r"(?:до|max|не\s+более)\s*[\$]?\s*([\d\s]+(?:[.,]\d+)?)\s*(?:\$|usd|долл)?",
+    r"(?:до|max|не\s+более)\s*(\d[\d\s]*)\s*(?:сом|som|₸|kgs)?",
     re.IGNORECASE,
 )
-_USD_RE = re.compile(r"\$|usd|долл", re.IGNORECASE)
-_LEFT_STEER_RE = re.compile(r"лев(?:ый|ого)?\s+рул", re.IGNORECASE)
-_RIGHT_STEER_RE = re.compile(r"прав(?:ый|ого)?\s+рул", re.IGNORECASE)
-_BRAND_MODEL_PATTERNS = (
-    re.compile(r"\b(toyota|camry|bmw|mercedes|honda|hyundai|kia|lexus|nissan|mazda)\b", re.I),
+_PRICE_FROM_RE = re.compile(
+    r"(?:от|from|минимум)\s*(\d[\d\s]*)\s*(?:сом|som|₸|kgs)?",
+    re.IGNORECASE,
+)
+_YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+_ROOMS_RE = re.compile(r"(\d)\s*[-\s]?(?:комн|комнат|room)", re.IGNORECASE)
+_ENGINE_EXPLICIT_RE = re.compile(
+    r"(?:объ[её]м(?:\s+двигателя)?|двигател\w*|engine(?:\s+volume)?)\s*[:=]?\s*"
+    r"(\d(?:[.,]\d{1,2})?)",
+    re.IGNORECASE,
+)
+_ENGINE_LITERS_RE = re.compile(
+    r"\b(\d(?:[.,]\d{1,2})?)\s*(?:л|литр(?:а|ов)?|l)\b",
+    re.IGNORECASE,
 )
 
+_CITIES = (
+    "бишкек",
+    "ош",
+    "каракол",
+    "джалал-абад",
+    "jalal-abad",
+    "талас",
+    "нарын",
+    "баткен",
+    "кант",
+    "tokmok",
+    "токмок",
+)
 
-def agent_domain_slugs(agent_type: AiAgentType) -> tuple[str, ...]:
-    return _AGENT_DOMAIN_SLUGS[agent_type]
+_CITY_CANON = {
+    "бишкек": "Бишкек",
+    "ош": "Ош",
+    "каракол": "Каракол",
+    "джалал-абад": "Джалал-Абад",
+    "jalal-abad": "Джалал-Абад",
+    "талас": "Талас",
+    "нарын": "Нарын",
+    "баткен": "Баткен",
+    "кант": "Кант",
+    "tokmok": "Токмок",
+    "токмок": "Токмок",
+}
 
 
-def parse_search_criteria(text: str, agent_type: AiAgentType) -> dict[str, Any]:
-    """
-    Lightweight rule-based parser (no LLM).
-    Converts natural language into structured search criteria.
-    """
+def parse_criteria(text: str, *, agent_type: str) -> dict[str, Any]:
     raw = text.strip()
     lowered = raw.lower()
-    criteria: dict[str, Any] = {"q": raw}
+    q = raw or None
+    min_price: int | None = None
+    max_price: int | None = None
+    year_min: int | None = None
+    year_max: int | None = None
+    rooms: int | None = None
+    city: str | None = None
+    brand: str | None = None
+    model: str | None = None
+    engine_volume: str | None = None
+    steering: Steering | None = None
+    employment: str | None = None
 
-    year_matches = re.findall(r"\b((?:19|20)\d{2})\b", raw)
-    if year_matches:
-        years_int = [int(y) for y in year_matches]
-        if "от" in lowered or "from" in lowered or "с " in lowered:
-            criteria["year_min"] = min(years_int)
-        elif len(years_int) == 1:
-            criteria["year_min"] = years_int[0]
-        else:
-            criteria["year_min"] = min(years_int)
-            criteria["year_max"] = max(years_int)
+    max_match = _PRICE_RE.search(lowered)
+    if max_match:
+        max_price = _digits(max_match.group(1))
 
-    price_match = _PRICE_RE.search(raw)
-    if price_match:
-        num_raw = price_match.group(1).replace(" ", "").replace(",", ".")
-        try:
-            criteria["max_price"] = float(Decimal(num_raw))
-        except (InvalidOperation, ValueError):
-            pass
+    min_match = _PRICE_FROM_RE.search(lowered)
+    if min_match:
+        min_price = _digits(min_match.group(1))
 
-    if _USD_RE.search(raw):
-        criteria["currency"] = Currency.USD.value
-    elif "сом" in lowered or "som" in lowered:
-        criteria["currency"] = Currency.KGS.value
+    if min_price is None and max_price is None:
+        plain_price = re.search(r"\b(\d{4,7})\b", lowered)
+        if plain_price:
+            max_price = _digits(plain_price.group(1))
 
-    if _LEFT_STEER_RE.search(raw):
-        criteria["steering"] = "left"
-    elif _RIGHT_STEER_RE.search(raw):
-        criteria["steering"] = "right"
+    years = [int(y.group()) for y in _YEAR_RE.finditer(raw)]
+    if years:
+        year_min = min(years)
+        year_max = max(years)
 
-    if agent_type == AiAgentType.ai_auto:
-        for pat in _BRAND_MODEL_PATTERNS:
-            m = pat.search(raw)
-            if m:
-                token = m.group(1).lower()
-                if token == "camry":
-                    criteria.setdefault("brand", "Toyota")
-                    criteria["model"] = "Camry"
-                elif token == "toyota":
-                    criteria.setdefault("brand", "Toyota")
-                else:
-                    criteria.setdefault("brand", token.title())
-                criteria["q"] = token
+    rooms_m = _ROOMS_RE.search(lowered)
+    if rooms_m:
+        rooms = int(rooms_m.group(1))
+
+    for city_key in _CITIES:
+        if city_key in lowered:
+            city = _CITY_CANON.get(city_key, city_key.title())
+            break
+
+    if agent_type == "ai_auto":
+        for alias, canon in sorted(BRAND_ALIASES.items(), key=lambda x: -len(x[0])):
+            if alias in lowered:
+                brand = canon
                 break
+        model = _extract_model(lowered, brand=brand)
+        if model and brand is None:
+            brand = MODEL_BRAND_HINT.get(model)
+        engine_volume = _extract_engine_volume(lowered)
+        if "левый" in lowered or "left" in lowered:
+            steering = "left"
+        if "правый" in lowered or "right" in lowered:
+            steering = "right"
 
-    if agent_type == AiAgentType.ai_realtor:
-        for kw in ("квартира", "дом", "участок", "офис", "аренда", "продаж"):
+    if agent_type == "ai_hr":
+        for kw in ("удалён", "remote", "офис", "part-time", "полная"):
             if kw in lowered:
-                criteria["property_hint"] = kw
+                employment = kw
                 break
 
-    if agent_type == AiAgentType.ai_hr:
-        if any(w in lowered for w in ("ищу работу", "резюме", "ваканс")):
-            criteria["job_mode"] = "seek_job"
-        elif any(w in lowered for w in ("ищу сотрудника", "требуется", "найму")):
-            criteria["job_mode"] = "seek_employee"
-
-    return criteria
-
-
-def merge_criteria(existing: dict[str, Any], new: dict[str, Any]) -> dict[str, Any]:
-    merged = dict(existing)
-    for key, value in new.items():
-        if value is None:
-            continue
-        if isinstance(value, str) and not value.strip():
-            continue
-        merged[key] = value
-    return merged
+    return AiSearchCriteria(
+        q=q,
+        city=city,
+        min_price=min_price,
+        max_price=max_price,
+        year_min=year_min,
+        year_max=year_max,
+        brand=brand,
+        model=model,
+        engine_volume=engine_volume,
+        steering=steering,
+        rooms=rooms,
+        employment=employment,
+    ).to_dict()
 
 
-def criteria_summary(criteria: dict[str, Any], agent_type: AiAgentType) -> str:
-    parts: list[str] = []
-    q = criteria.get("q")
-    if isinstance(q, str) and q.strip():
-        parts.append(q.strip())
-    if criteria.get("year_min"):
-        parts.append(f"от {criteria['year_min']} г.")
-    if criteria.get("max_price"):
-        cur = criteria.get("currency", "USD")
-        parts.append(f"до {criteria['max_price']} {cur}")
-    if criteria.get("steering") == "left":
-        parts.append("левый руль")
-    if criteria.get("brand"):
-        parts.append(str(criteria["brand"]))
-    if criteria.get("model"):
-        parts.append(str(criteria["model"]))
-    if not parts:
-        agent_labels = {
-            AiAgentType.ai_realtor: "недвижимость",
-            AiAgentType.ai_auto: "автомобиль",
-            AiAgentType.ai_hr: "работу или сотрудника",
-        }
-        return f"Подбор: {agent_labels.get(agent_type, 'объявления')}"
-    return " · ".join(parts)
+def _extract_model(lowered: str, *, brand: str | None) -> str | None:
+    # Longest alias first so "santa fe" / "land cruiser" win over short tokens.
+    candidates: list[tuple[int, str]] = []
+    for alias, canon in MODEL_ALIASES.items():
+        if alias in lowered:
+            hint = MODEL_BRAND_HINT.get(canon)
+            if brand and hint and hint != brand:
+                continue
+            candidates.append((len(alias), canon))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: -x[0])
+    return normalize_model(candidates[0][1])
+
+
+def _extract_engine_volume(lowered: str) -> str | None:
+    explicit = _ENGINE_EXPLICIT_RE.search(lowered)
+    if explicit:
+        return normalize_engine_volume(explicit.group(1))
+    liters = _ENGINE_LITERS_RE.search(lowered)
+    if liters:
+        return normalize_engine_volume(liters.group(1))
+    return None
+
+
+def _digits(value: str) -> int:
+    return int(re.sub(r"\s+", "", value))
+
+
+__all__ = (
+    "AiSearchCriteria",
+    "normalize_brand",
+    "normalize_model",
+    "normalize_engine_volume",
+    "parse_criteria",
+)

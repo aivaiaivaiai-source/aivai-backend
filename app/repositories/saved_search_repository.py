@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from sqlalchemy import Integer, Numeric, String, and_, cast, func, literal, or_, select
+from decimal import Decimal
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.listing import Listing
@@ -38,47 +40,16 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         return result.scalar_one_or_none()
 
     async def find_matching_for_listing(self, listing: Listing) -> list[SavedSearch]:
-        """Return saved searches matched in SQL + JSONB; caller applies ``q`` in Python."""
+        """Match active saved searches to a listing (Python filter — dialect-safe)."""
         if listing.owner_id is None:
             return []
-
-        qp = SavedSearch.query_params
-        cid = qp["category_id"].astext
-        cur = qp["currency"].astext
-        min_raw = qp["min_price"].astext
-        max_raw = qp["max_price"].astext
-
-        def json_text_unset_or_empty(col):  # type: ignore[no-untyped-def]
-            return or_(
-                col.is_(None),
-                func.trim(func.coalesce(col, "")) == "",
-            )
-
-        category_ok = or_(
-            json_text_unset_or_empty(cid),
-            cast(cid, Integer) == literal(listing.category_id, type_=Integer),
-        )
-        currency_ok = or_(
-            json_text_unset_or_empty(cur),
-            cur == literal(listing.currency.value, type_=String()),
-        )
-
-        price_lit = literal(listing.price, type_=Numeric(12, 2))
-        min_ok = or_(
-            json_text_unset_or_empty(min_raw),
-            price_lit >= cast(min_raw, Numeric(12, 2)),
-        )
-        max_ok = or_(
-            json_text_unset_or_empty(max_raw),
-            price_lit <= cast(max_raw, Numeric(12, 2)),
-        )
 
         stmt = (
             select(SavedSearch)
             .where(SavedSearch.is_active.is_(True))
-            .where(SavedSearch.user_id != literal(listing.owner_id, type_=Integer))
-            .where(and_(category_ok, currency_ok, min_ok, max_ok))
+            .where(SavedSearch.user_id != listing.owner_id)
             .order_by(SavedSearch.id.asc())
+            .limit(500)
         )
         result = await self._session.execute(stmt)
         rows = list(result.scalars().all())
@@ -86,16 +57,43 @@ class SavedSearchRepository(BaseRepository[SavedSearch]):
         matched: list[SavedSearch] = []
         for ss in rows:
             params = ss.query_params if isinstance(ss.query_params, dict) else {}
-            raw_q = params.get("q")
-            if raw_q is None:
-                matched.append(ss)
+            if not _matches_params(listing, params):
                 continue
-            needle = str(raw_q).strip().lower()
-            if not needle:
-                matched.append(ss)
-                continue
-            title_l = listing.title.lower()
-            desc = (listing.description or "").lower()
-            if needle in title_l or needle in desc:
-                matched.append(ss)
+            matched.append(ss)
         return matched
+
+
+def _matches_params(listing: Listing, params: dict) -> bool:
+    raw_cat = params.get("category_id")
+    if raw_cat not in (None, ""):
+        try:
+            if int(raw_cat) != listing.category_id:
+                return False
+        except (TypeError, ValueError):
+            return False
+
+    raw_cur = params.get("currency")
+    if raw_cur not in (None, ""):
+        if str(raw_cur).upper() != listing.currency.value.upper():
+            return False
+
+    if listing.price is not None:
+        min_raw = params.get("min_price")
+        max_raw = params.get("max_price")
+        try:
+            if min_raw not in (None, "") and listing.price < Decimal(str(min_raw)):
+                return False
+            if max_raw not in (None, "") and listing.price > Decimal(str(max_raw)):
+                return False
+        except Exception:
+            return False
+
+    raw_q = params.get("q")
+    if raw_q is None:
+        return True
+    needle = str(raw_q).strip().lower()
+    if not needle:
+        return True
+    title_l = listing.title.lower()
+    desc = (listing.description or "").lower()
+    return needle in title_l or needle in desc

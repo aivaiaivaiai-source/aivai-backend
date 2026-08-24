@@ -17,6 +17,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   app:
     build: .
     restart: unless-stopped
@@ -34,9 +45,32 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-aivai}
       POSTGRES_SERVER: db
       POSTGRES_PORT: "5432"
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
       db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  media-worker:
+    build: .
+    restart: unless-stopped
+    command: python -m app.workers.media_worker
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aivai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-aivai}
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: "5432"
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      MEDIA_ASYNC_PIPELINE_ENABLED: ${MEDIA_ASYNC_PIPELINE_ENABLED:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

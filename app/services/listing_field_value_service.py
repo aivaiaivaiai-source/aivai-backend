@@ -153,6 +153,11 @@ class ListingFieldValueService:
                 code="INVALID_LISTING_FIELD",
             )
 
+        if text.isdigit():
+            brand = await self._brands.get_by_id(int(text))
+            if brand is not None and brand.is_enabled:
+                return brand.id
+
         slug = normalize_text(text).replace(" ", "-")
         brand = await self._brands.get_by_slug(slug)
         if brand is not None:
@@ -192,6 +197,17 @@ class ListingFieldValueService:
                 status_code=400,
                 code="INVALID_LISTING_FIELD",
             )
+
+        if text.isdigit():
+            model = await self._models.get_by_id(int(text))
+            if model is not None and model.is_enabled:
+                if brand_id is not None and model.brand_id != brand_id:
+                    raise AppException(
+                        f"Unknown model '{text}' for brand_id={brand_id}",
+                        status_code=400,
+                        code="INVALID_LISTING_FIELD",
+                    )
+                return model.id, model.brand_id
 
         if brand_id is None:
             spaced, compact = normalize_alias_keys(text)

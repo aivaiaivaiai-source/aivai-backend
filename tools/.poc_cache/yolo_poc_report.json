@@ -1,0 +1,371 @@
+{
+  "summary": {
+    "model": "yolov8n.onnx (Ultralytics export, COCO)",
+    "images": 18,
+    "categories": [
+      "transport-car-sale"
+    ],
+    "vehicle_hit_rate": 0.7222222222222222,
+    "good_bbox_rate": 0.7222222222222222,
+    "smartfit_candidate_rate": 0.7222222222222222,
+    "latency_ms": {
+      "p50": 48.12149998906534,
+      "p95": 131.77679997170344,
+      "mean": 71.03053888810489
+    },
+    "memory_mb": {
+      "rss_before": 60.1,
+      "rss_after_model_load": 85.2,
+      "rss_after_batch": 138.9,
+      "model_delta_mb": 25.1
+    },
+    "onnx_providers": [
+      "AzureExecutionProvider",
+      "CPUExecutionProvider"
+    ],
+    "cpu_count": 12
+  },
+  "results": [
+    {
+      "listing_id": 39,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg",
+      "file": "397b7426-0e0a-4014-81cd-ec487fcaeabb.jpg",
+      "inference_ms": 325.7108999823686,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.6573760509490967,
+        "bbox_norm": [
+          0.10442552715539932,
+          0.3428438901901245,
+          0.8406411409378052,
+          0.3320698142051697
+        ],
+        "area_ratio": 0.2791515290737152
+      }
+    },
+    {
+      "listing_id": 38,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/60e6038a-053f-43a8-96c2-f02101271713.jpg",
+      "file": "60e6038a-053f-43a8-96c2-f02101271713.jpg",
+      "inference_ms": 131.77679997170344,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.8439772725105286,
+        "bbox_norm": [
+          0.10744524002075195,
+          0.37955138087272644,
+          0.843143880367279,
+          0.5239141583442688
+        ],
+        "area_ratio": 0.44173499941825867
+      }
+    },
+    {
+      "listing_id": 37,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/d88cce19-b0f3-48a7-a42c-450f42177c59.jpg",
+      "file": "d88cce19-b0f3-48a7-a42c-450f42177c59.jpg",
+      "inference_ms": 45.41520000202581,
+      "vehicle_hit": false,
+      "all_vehicle_count": 0,
+      "smartfit_useful": null,
+      "primary": null
+    },
+    {
+      "listing_id": 36,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/636e3bdf-5408-4ff4-967d-81d588827b04.jpg",
+      "file": "636e3bdf-5408-4ff4-967d-81d588827b04.jpg",
+      "inference_ms": 46.13610001979396,
+      "vehicle_hit": false,
+      "all_vehicle_count": 0,
+      "smartfit_useful": null,
+      "primary": null
+    },
+    {
+      "listing_id": 29,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/6624e7a7-a98b-4833-9c26-c5464da7fe15.jpg",
+      "file": "6624e7a7-a98b-4833-9c26-c5464da7fe15.jpg",
+      "inference_ms": 87.14570000302047,
+      "vehicle_hit": false,
+      "all_vehicle_count": 0,
+      "smartfit_useful": null,
+      "primary": null
+    },
+    {
+      "listing_id": 28,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/7b094cfe-7f5c-45e1-a1d2-91b62f2a878f.jpg",
+      "file": "7b094cfe-7f5c-45e1-a1d2-91b62f2a878f.jpg",
+      "inference_ms": 55.1190999976825,
+      "vehicle_hit": false,
+      "all_vehicle_count": 0,
+      "smartfit_useful": null,
+      "primary": null
+    },
+    {
+      "listing_id": 26,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/5d4d1448-88c3-4f7e-8713-a7130760af74.jpg",
+      "file": "5d4d1448-88c3-4f7e-8713-a7130760af74.jpg",
+      "inference_ms": 47.29749998659827,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.8727982044219971,
+        "bbox_norm": [
+          0.12684468924999237,
+          0.356344610452652,
+          0.7776827812194824,
+          0.48467764258384705
+        ],
+        "area_ratio": 0.37692543864250183
+      }
+    },
+    {
+      "listing_id": 35,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/71c05d58-7045-4968-a868-ee3a06e00fe1.jpg",
+      "file": "71c05d58-7045-4968-a868-ee3a06e00fe1.jpg",
+      "inference_ms": 48.47780001000501,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.8439772725105286,
+        "bbox_norm": [
+          0.10744524002075195,
+          0.37955138087272644,
+          0.843143880367279,
+          0.5239141583442688
+        ],
+        "area_ratio": 0.44173499941825867
+      }
+    },
+    {
+      "listing_id": 34,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/506dbdc7-f45b-40ba-bd40-5dda832f39fe.jpg",
+      "file": "506dbdc7-f45b-40ba-bd40-5dda832f39fe.jpg",
+      "inference_ms": 48.23190000024624,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.6573760509490967,
+        "bbox_norm": [
+          0.10442552715539932,
+          0.3428438901901245,
+          0.8406411409378052,
+          0.3320698142051697
+        ],
+        "area_ratio": 0.2791515290737152
+      }
+    },
+    {
+      "listing_id": 33,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/812d21cd-3cdc-4873-a95e-16ac02a60863.jpg",
+      "file": "812d21cd-3cdc-4873-a95e-16ac02a60863.jpg",
+      "inference_ms": 46.869799989508465,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.6573760509490967,
+        "bbox_norm": [
+          0.10442552715539932,
+          0.3428438901901245,
+          0.8406411409378052,
+          0.3320698142051697
+        ],
+        "area_ratio": 0.2791515290737152
+      }
+    },
+    {
+      "listing_id": 32,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/77045449-1eaf-473d-a98c-9f04259864cd.jpg",
+      "file": "77045449-1eaf-473d-a98c-9f04259864cd.jpg",
+      "inference_ms": 45.13900002348237,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.6573760509490967,
+        "bbox_norm": [
+          0.10442552715539932,
+          0.3428438901901245,
+          0.8406411409378052,
+          0.3320698142051697
+        ],
+        "area_ratio": 0.2791515290737152
+      }
+    },
+    {
+      "listing_id": 31,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/d4751be6-fbd1-40c1-8571-8f0999f61c2d.jpg",
+      "file": "d4751be6-fbd1-40c1-8571-8f0999f61c2d.jpg",
+      "inference_ms": 45.137800014344975,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.6573760509490967,
+        "bbox_norm": [
+          0.10442552715539932,
+          0.3428438901901245,
+          0.8406411409378052,
+          0.3320698142051697
+        ],
+        "area_ratio": 0.2791515290737152
+      }
+    },
+    {
+      "listing_id": 30,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg",
+      "file": "569ea9ba-6e10-4261-a35f-31c05e2bbb23.jpg",
+      "inference_ms": 52.942800015443936,
+      "vehicle_hit": true,
+      "all_vehicle_count": 5,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.8505218625068665,
+        "bbox_norm": [
+          0.09606514126062393,
+          0.3381686210632324,
+          0.8265810012817383,
+          0.5549332499504089
+        ],
+        "area_ratio": 0.45869728922843933
+      }
+    },
+    {
+      "listing_id": 30,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/c2304556-8a7e-4f74-a8ac-93fc77b6e77c.jpg",
+      "file": "c2304556-8a7e-4f74-a8ac-93fc77b6e77c.jpg",
+      "inference_ms": 49.49609999312088,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.8439772725105286,
+        "bbox_norm": [
+          0.10744524002075195,
+          0.37955138087272644,
+          0.843143880367279,
+          0.5239141583442688
+        ],
+        "area_ratio": 0.44173499941825867
+      }
+    },
+    {
+      "listing_id": 27,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg",
+      "file": "ed7cb0fa-991c-4142-85c6-68ad3a13547c.jpg",
+      "inference_ms": 43.70089998701587,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.6338660717010498,
+        "bbox_norm": [
+          0.10290555655956268,
+          0.34292545914649963,
+          0.8423193097114563,
+          0.33224061131477356
+        ],
+        "area_ratio": 0.2798526883125305
+      }
+    },
+    {
+      "listing_id": 25,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/db3273bf-9d1e-466a-a2c9-4a04cc162260.jpg",
+      "file": "db3273bf-9d1e-466a-a2c9-4a04cc162260.jpg",
+      "inference_ms": 44.939199986401945,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.8395839929580688,
+        "bbox_norm": [
+          0.09590883553028107,
+          0.3384893238544464,
+          0.8281469941139221,
+          0.5556107759475708
+        ],
+        "area_ratio": 0.4601273536682129
+      }
+    },
+    {
+      "listing_id": 24,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/9f3bf53a-ee3d-488c-b316-674e586b669b.jpg",
+      "file": "9f3bf53a-ee3d-488c-b316-674e586b669b.jpg",
+      "inference_ms": 48.01109997788444,
+      "vehicle_hit": false,
+      "all_vehicle_count": 0,
+      "smartfit_useful": null,
+      "primary": null
+    },
+    {
+      "listing_id": 23,
+      "category": "transport-car-sale",
+      "url": "http://127.0.0.1:8000/media/2a49837b-39b1-482f-bb59-f60cd325575e.jpg",
+      "file": "2a49837b-39b1-482f-bb59-f60cd325575e.jpg",
+      "inference_ms": 67.0020000252407,
+      "vehicle_hit": true,
+      "all_vehicle_count": 4,
+      "smartfit_useful": true,
+      "primary": {
+        "class_id": 2,
+        "class_name": "car",
+        "confidence": 0.6125475764274597,
+        "bbox_norm": [
+          0.102599136531353,
+          0.3429528474807739,
+          0.8433105945587158,
+          0.3317909240722656
+        ],
+        "area_ratio": 0.2798027992248535
+      }
+    }
+  ]
+}

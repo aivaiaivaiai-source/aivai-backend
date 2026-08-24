@@ -1,12 +1,18 @@
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 
-from app.api.deps import get_current_user, get_review_service, get_user_service
+from app.api.deps import (
+    get_current_user,
+    get_review_service,
+    get_user_service,
+    get_wallet_service,
+)
 from app.core.constants import MAX_LIMIT
 from app.schemas.review import ReviewCreate, ReviewRead, ReviewReplyUpdate
 from app.schemas.user import UserByPhoneRequest, UserRead, UserUpdate
-from app.schemas.wallet import WalletTopup
+from app.schemas.wallet import WalletLedgerRead, WalletTopup
 from app.services.storage_service import read_upload_limited
 from app.services.user_service import ReviewService, UserService
+from app.services.wallet_service import WalletService
 
 router = APIRouter()
 
@@ -16,7 +22,7 @@ async def read_me(
     current: UserRead = Depends(get_current_user),
     service: UserService = Depends(get_user_service),
 ) -> UserRead:
-    return await service.get_profile(current.id)
+    return await service.get_profile(current.id, touch_presence=True)
 
 
 @router.patch("/me", response_model=UserRead)
@@ -50,6 +56,16 @@ async def topup_my_wallet(
 ) -> UserRead:
     """Placeholder credit until a payment provider is wired."""
     return await service.topup_wallet(current.id, body.amount)
+
+
+@router.get("/me/wallet/ledger", response_model=list[WalletLedgerRead])
+async def list_my_wallet_ledger(
+    current: UserRead = Depends(get_current_user),
+    wallet: WalletService = Depends(get_wallet_service),
+    limit: int = Query(default=50, ge=1, le=MAX_LIMIT),
+    offset: int = Query(default=0, ge=0),
+) -> list[WalletLedgerRead]:
+    return await wallet.list_ledger(current.id, limit=limit, offset=offset)
 
 
 @router.post("/by-phone", response_model=UserRead)

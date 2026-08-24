@@ -12,6 +12,7 @@ class ChatPeerRead(BaseModel):
 
     id: int
     full_name: str
+    last_login: datetime | None = None
 
 
 class ChatLastMessageRead(BaseModel):

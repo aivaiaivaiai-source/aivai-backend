@@ -18,6 +18,9 @@ from app.core.exceptions import AppException
 from app.core.logging import configure_logging
 from app.middleware.request_id import get_request_id
 from app.middleware.request_id import RequestIdMiddleware
+from app.core.redis import close_redis, init_redis
+from app.services.ai_match_worker import ai_maintenance_loop, ai_match_worker_loop
+from app.services.ai_realtime_hub import start_redis_pubsub_bridge
 from app.services.assistant_conversation_cleanup_worker import (
     assistant_conversation_cleanup_loop,
 )
@@ -68,7 +71,9 @@ async def lifespan(app: FastAPI):
         whisper_ready,
         "present" if whisper_ready else "missing OPENAI_API_KEY",
     )
+    await init_redis()
     stop_cleanup = asyncio.Event()
+    stop_ai = asyncio.Event()
     cleanup_task = asyncio.create_task(
         assistant_conversation_cleanup_loop(
             settings=_settings,
@@ -76,16 +81,31 @@ async def lifespan(app: FastAPI):
         ),
         name="assistant_conversation_cleanup",
     )
+    ai_match_task = asyncio.create_task(
+        ai_match_worker_loop(stop_event=stop_ai),
+        name="ai_match_worker",
+    )
+    ai_maintenance_task = asyncio.create_task(
+        ai_maintenance_loop(settings=_settings, stop_event=stop_ai),
+        name="ai_maintenance",
+    )
+    ai_pubsub_task = asyncio.create_task(
+        start_redis_pubsub_bridge(stop_ai),
+        name="ai_realtime_pubsub",
+    )
     logger.info("Application startup complete.")
     try:
         yield
     finally:
         stop_cleanup.set()
-        cleanup_task.cancel()
-        try:
-            await cleanup_task
-        except asyncio.CancelledError:
-            pass
+        stop_ai.set()
+        for task in (cleanup_task, ai_match_task, ai_maintenance_task, ai_pubsub_task):
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        await close_redis()
 
 
 _settings = get_settings()
@@ -98,10 +118,16 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    _media_dir = Path(_settings.MEDIA_ROOT).resolve()
-    _media_dir.mkdir(parents=True, exist_ok=True)
-    _mount = "/" + _settings.MEDIA_URL.strip("/")
-    application.mount(_mount, StaticFiles(directory=str(_media_dir)), name="media")
+    from app.storage.factory import should_mount_static_media
+
+    if should_mount_static_media(_settings):
+        _media_dir = Path(_settings.MEDIA_ROOT).resolve()
+        _media_dir.mkdir(parents=True, exist_ok=True)
+        _mount = "/" + _settings.MEDIA_URL.strip("/")
+        application.mount(_mount, StaticFiles(directory=str(_media_dir)), name="media")
+    else:
+        # S3/R2: media is not served via FastAPI StaticFiles.
+        Path(_settings.MEDIA_ROOT).mkdir(parents=True, exist_ok=True)
 
     application.add_middleware(RequestIdMiddleware)
 

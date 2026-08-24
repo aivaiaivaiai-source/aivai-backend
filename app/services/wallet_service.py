@@ -2,17 +2,38 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import InsufficientBalanceError, TransactionFailedError
+from app.core.pagination import clamp_limit
 from app.models.enums import WalletLedgerKind
 from app.models.user import User
 from app.models.wallet_ledger import WalletLedger
+from app.schemas.wallet import WalletLedgerRead
 
 
 class WalletService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def list_ledger(
+        self,
+        user_id: int,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[WalletLedgerRead]:
+        limit = clamp_limit(limit)
+        stmt = (
+            select(WalletLedger)
+            .where(WalletLedger.user_id == user_id)
+            .order_by(WalletLedger.created_at.desc(), WalletLedger.id.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        rows = (await self._session.execute(stmt)).scalars().all()
+        return [WalletLedgerRead.model_validate(row) for row in rows]
 
     async def credit(
         self,

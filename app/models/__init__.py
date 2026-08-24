@@ -1,8 +1,3 @@
-from app.models.ai_message import AiMessage
-from app.models.ai_search_match import AiSearchMatch
-from app.models.ai_search_task import AiSearchTask
-from app.models.ai_session import AiSession
-from app.models.ai_subscription import AiSubscription
 from app.models.assistant_conversation import AssistantConversation
 from app.models.assistant_enums import (
     AssistantActionType,
@@ -27,13 +22,7 @@ from app.models.category_field import CategoryCoreField, CategoryOptionalField
 from app.models.category_filter import CategoryFilter
 from app.models.category_rule import CategoryRule
 from app.models.chat import Chat
-from app.models.enums import (
-    AiAgentType,
-    AiMessageType,
-    AiSubscriptionStatus,
-    Currency,
-    ListingStatus,
-)
+from app.models.enums import Currency, ListingStatus
 from app.models.vehicle import VehicleAlias, VehicleBrand, VehicleModel
 from app.models.favorite import Favorite
 from app.models.listing import Listing
@@ -49,14 +38,6 @@ from app.models.user import User
 from app.models.wallet_ledger import WalletLedger
 
 __all__ = (
-    "AiAgentType",
-    "AiMessage",
-    "AiMessageType",
-    "AiSearchMatch",
-    "AiSearchTask",
-    "AiSession",
-    "AiSubscription",
-    "AiSubscriptionStatus",
     "AssistantActionType",
     "AssistantConversation",
     "AssistantConversationStatus",

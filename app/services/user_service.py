@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,11 +49,26 @@ class UserService:
             return None
         return UserRead.model_validate(row)
 
-    async def get_profile(self, user_id: int) -> UserRead:
+    async def get_profile(self, user_id: int, *, touch_presence: bool = False) -> UserRead:
+        if touch_presence:
+            await self.touch_last_login(user_id)
         row = await self._users.get_by_id(user_id)
         if row is None:
             raise EntityNotFoundError("User", entity_id=user_id)
         return await self._to_profile(row)
+
+    async def touch_last_login(self, user_id: int) -> None:
+        """Mark user as recently active for «В сети» presence."""
+        updated = await self._users.update(user_id, last_login=datetime.now(UTC))
+        if updated is None:
+            return
+        try:
+            await self._session.commit()
+        except Exception as exc:
+            await self._session.rollback()
+            raise TransactionFailedError(
+                "Failed to update last_login; transaction rolled back.",
+            ) from exc
 
     async def update_me(self, user_id: int, data: UserUpdate) -> UserRead:
         values: dict[str, str | None] = {}
@@ -123,10 +139,17 @@ class UserService:
         normalized_phone = phone.strip()
         user = await self._users.get_by_phone(normalized_phone)
         if user is not None:
-            return UserRead.model_validate(user)
+            await self.touch_last_login(user.id)
+            refreshed = await self._users.get_by_id(user.id)
+            assert refreshed is not None
+            return UserRead.model_validate(refreshed)
 
         created = await self._users.create(
-            User(phone=normalized_phone, full_name=full_name.strip() or "User")
+            User(
+                phone=normalized_phone,
+                full_name=full_name.strip() or "User",
+                last_login=datetime.now(UTC),
+            )
         )
         try:
             await self._session.commit()

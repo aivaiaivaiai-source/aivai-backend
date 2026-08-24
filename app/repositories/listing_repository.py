@@ -24,7 +24,12 @@ class ListingRepository(BaseRepository[Listing]):
             .options(
                 selectinload(Listing.images),
                 selectinload(Listing.category),
-                selectinload(Listing.field_values),
+                selectinload(Listing.field_values).selectinload(
+                    ListingFieldValue.ref_brand
+                ),
+                selectinload(Listing.field_values).selectinload(
+                    ListingFieldValue.ref_model
+                ),
             )
         )
         if for_update:

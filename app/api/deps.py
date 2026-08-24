@@ -5,6 +5,8 @@ share that session for the unit of work. Map ``AppException`` subclasses to HTTP
 responses via handlers registered on the FastAPI app (see ``app.main``).
 """
 
+from functools import lru_cache
+
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
@@ -13,9 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.exceptions import UnauthorizedError
 from app.core.security import decode_token
-from app.db.session import get_db
+from app.db.session import get_db, get_read_db
 from app.repositories.chat_repository import ChatRepository
-from app.repositories.category_alias_repository import CategoryAliasRepository
+from app.repositories.ai_agent_repository import AiAgentRepository
+from app.repositories.ai_search_task_repository import AiSearchTaskRepository
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.category_moderation_rule_repository import CategoryModerationRuleRepository
 from app.repositories.category_routing_rule_repository import CategoryRoutingRuleRepository
@@ -35,7 +38,8 @@ from app.repositories.review_repository import ReviewRepository
 from app.repositories.saved_search_repository import SavedSearchRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserRead
-from app.services.assistant_conversation_service import AssistantConversationService
+from app.services.ai_agent_service import AiAgentService
+from app.services.ai_search_service import AiSearchService
 from app.services.assistant_service import AssistantService, build_assistant_conversation_service
 from app.services.assistant_voice_service import AssistantVoiceService
 from app.services.text_to_speech_service import OpenAITTSService, TextToSpeechService
@@ -49,6 +53,12 @@ from app.services.health_service import HealthService
 from app.services.listing_field_value_service import ListingFieldValueService
 from app.services.listing_service import ListingService
 from app.services.image_moderation_pipeline import build_image_moderation_pipeline
+from app.services.direct_upload_service import DirectUploadService
+from app.services.focus_bbox_detector import (
+    FocusBBoxDetector,
+    RtDetrFocusBBoxDetector,
+)
+from app.services.focus_bbox_service import FocusBBoxService
 from app.services.media_service import MediaService
 from app.services.notification_service import NotificationService
 from app.services.promotion_service import PromotionService
@@ -58,10 +68,7 @@ from app.services.storage_service import StorageService
 from app.services.user_service import ReviewService, UserService
 from app.services.vehicle_catalog_service import VehicleCatalogService
 from app.services.voice_service import VoiceService
-from app.services.ai_agent_service import AiAgentService
-from app.services.ai_search_service import AiSearchService
 from app.services.wallet_service import WalletService
-from app.repositories.ai_search_task_repository import AiSearchTaskRepository
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -136,7 +143,53 @@ def get_chat_service(session: AsyncSession = Depends(get_db)) -> ChatService:
     )
 
 
-def get_listing_service(session: AsyncSession = Depends(get_db)) -> ListingService:
+def get_ai_search_service(session: AsyncSession = Depends(get_db)) -> AiSearchService:
+    return AiSearchService(
+        session,
+        CategoryRepository(session),
+        AiSearchTaskRepository(session, ListingRepository(session)),
+        AiAgentRepository(session),
+        NotificationRepository(session),
+    )
+
+
+def get_ai_agent_service(
+    session: AsyncSession = Depends(get_db),
+    search: AiSearchService = Depends(get_ai_search_service),
+) -> AiAgentService:
+    return AiAgentService(
+        session,
+        AiAgentRepository(session),
+        UserRepository(session),
+        WalletService(session),
+        search,
+    )
+
+
+def get_ai_agent_service_read(
+    session: AsyncSession = Depends(get_read_db),
+) -> AiAgentService:
+    """History reads use read replica when configured."""
+    search = AiSearchService(
+        session,
+        CategoryRepository(session),
+        AiSearchTaskRepository(session, ListingRepository(session)),
+        AiAgentRepository(session),
+        NotificationRepository(session),
+    )
+    return AiAgentService(
+        session,
+        AiAgentRepository(session),
+        UserRepository(session),
+        WalletService(session),
+        search,
+    )
+
+
+def get_listing_service(
+    session: AsyncSession = Depends(get_db),
+    ai_search: AiSearchService = Depends(get_ai_search_service),
+) -> ListingService:
     return ListingService(
         session,
         ListingRepository(session),
@@ -153,13 +206,7 @@ def get_listing_service(session: AsyncSession = Depends(get_db)) -> ListingServi
             VehicleModelRepository(session),
             VehicleAliasRepository(session),
         ),
-        ai_search_service=AiSearchService(
-            session,
-            AiSearchTaskRepository(session),
-            ListingRepository(session),
-            CategoryRepository(session),
-            NotificationRepository(session),
-        ),
+        ai_search_service=ai_search,
     )
 
 
@@ -187,6 +234,7 @@ def get_media_service(session: AsyncSession = Depends(get_db)) -> MediaService:
     settings = get_settings()
     media_repo = MediaRepository(session)
     storage = StorageService(settings)
+    focus_bbox_service = _build_focus_bbox_service(settings, media_repo)
     return MediaService(
         session,
         media_repo,
@@ -197,6 +245,57 @@ def get_media_service(session: AsyncSession = Depends(get_db)) -> MediaService:
             media_repo,
             storage,
         ),
+        focus_bbox_service=focus_bbox_service,
+    )
+
+
+def get_direct_upload_service(session: AsyncSession = Depends(get_db)) -> DirectUploadService:
+    settings = get_settings()
+    media_repo = MediaRepository(session)
+    storage = StorageService(settings)
+    focus_bbox_service = _build_focus_bbox_service(settings, media_repo)
+    return DirectUploadService(
+        session,
+        media_repo,
+        ListingRepository(session),
+        storage,
+        settings=settings,
+        moderation_pipeline=build_image_moderation_pipeline(
+            session,
+            media_repo,
+            storage,
+        ),
+        focus_bbox_service=focus_bbox_service,
+    )
+
+
+@lru_cache
+def _get_focus_bbox_detector(
+    model_id: str,
+    min_confidence: float,
+    inference_max_edge: int,
+) -> FocusBBoxDetector:
+    return RtDetrFocusBBoxDetector(
+        model_id,
+        min_confidence=min_confidence,
+        inference_max_edge=inference_max_edge,
+    )
+
+
+def _build_focus_bbox_service(
+    settings: Settings,
+    media_repo: MediaRepository,
+) -> FocusBBoxService | None:
+    if not settings.FOCUS_BBOX_ENABLED:
+        return None
+    return FocusBBoxService(
+        media_repo,
+        _get_focus_bbox_detector(
+            settings.FOCUS_BBOX_MODEL_ID,
+            settings.FOCUS_BBOX_MIN_CONFIDENCE,
+            settings.MEDIA_DETECTOR_INFERENCE_MAX_EDGE,
+        ),
+        enabled=True,
     )
 
 
@@ -290,23 +389,6 @@ def get_promotion_service(
         WalletService(session),
         listing_service,
     )
-
-
-def get_ai_search_service(session: AsyncSession = Depends(get_db)) -> AiSearchService:
-    return AiSearchService(
-        session,
-        AiSearchTaskRepository(session),
-        ListingRepository(session),
-        CategoryRepository(session),
-        NotificationRepository(session),
-    )
-
-
-def get_ai_agent_service(
-    session: AsyncSession = Depends(get_db),
-    search: AiSearchService = Depends(get_ai_search_service),
-) -> AiAgentService:
-    return AiAgentService(session, WalletService(session), search)
 
 
 def get_health_service(session: AsyncSession = Depends(get_db)) -> HealthService:
