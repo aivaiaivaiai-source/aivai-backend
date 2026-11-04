@@ -28,8 +28,8 @@ from app.services.voice_session_store import VoiceDialogueSession
 
 
 def test_transport_requires_real_photo() -> None:
-    assert requires_real_photo("transport-cars") is True
-    assert allows_placeholder_image("transport-cars") is False
+    assert requires_real_photo("transport-car-sale") is True
+    assert allows_placeholder_image("transport-car-sale") is False
 
 
 def test_services_allow_placeholder() -> None:
@@ -49,10 +49,10 @@ def test_placeholder_not_counted_as_real_photo() -> None:
 
 
 def test_can_publish_active_rules() -> None:
-    assert can_publish_active(category_slug="transport-cars", real_photo_count=1) is True
+    assert can_publish_active(category_slug="transport-car-sale", real_photo_count=1) is True
     assert (
         can_publish_active(
-            category_slug="transport-cars",
+            category_slug="transport-car-sale",
             real_photo_count=0,
             uses_placeholder=True,
         )
@@ -99,7 +99,7 @@ async def test_goods_publish_blocked_without_photo_creates_draft() -> None:
     session = VoiceDialogueSession(
         user_id=1,
         category_id=10,
-        category_slug="transport-cars",
+        category_slug="transport-car-sale",
         known_fields={"city": "Бишкек", "year": "2018"},
         flow_stage="publish_preview",
         generated_title="Toyota Camry",
@@ -187,7 +187,7 @@ def test_draft_preview_response_includes_photo_flags() -> None:
         title="Test",
         description="Short.",
         category_id=1,
-        category_slug="transport-cars",
+        category_slug="transport-car-sale",
         real_photo_required=True,
         placeholder_allowed=False,
     )

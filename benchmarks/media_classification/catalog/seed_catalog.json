@@ -1,0 +1,65 @@
+{
+  "catalog_version": "public-seed-v1-catalog",
+  "categories": [
+    {
+      "id": 10,
+      "slug": "transport",
+      "name": "Транспорт",
+      "parent_id": null,
+      "is_active": true,
+      "production": true
+    },
+    {
+      "id": 101,
+      "slug": "transport-car-sale",
+      "name": "Продажа авто",
+      "parent_id": 10,
+      "is_active": true,
+      "production": true
+    },
+    {
+      "id": 102,
+      "slug": "transport-auto-parts",
+      "name": "Автозапчасти",
+      "parent_id": 10,
+      "is_active": true,
+      "production": true
+    },
+    {
+      "id": 900001,
+      "slug": "benchmark-apparel",
+      "name": "Apparel",
+      "parent_id": null,
+      "is_active": true,
+      "production": false,
+      "notes": "BENCHMARK-ONLY — not a production AiVai category"
+    },
+    {
+      "id": 900002,
+      "slug": "benchmark-footwear",
+      "name": "Footwear",
+      "parent_id": null,
+      "is_active": true,
+      "production": false,
+      "notes": "BENCHMARK-ONLY — not a production AiVai category"
+    },
+    {
+      "id": 900003,
+      "slug": "benchmark-other-consumer",
+      "name": "Other consumer",
+      "parent_id": null,
+      "is_active": true,
+      "production": false,
+      "notes": "BENCHMARK-ONLY — not a production AiVai category"
+    },
+    {
+      "id": 900004,
+      "slug": "benchmark-transport-other",
+      "name": "Other transport",
+      "parent_id": null,
+      "is_active": true,
+      "production": false,
+      "notes": "BENCHMARK-ONLY — not a production AiVai category"
+    }
+  ]
+}

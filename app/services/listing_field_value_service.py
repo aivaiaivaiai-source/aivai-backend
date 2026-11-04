@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -8,6 +9,7 @@ from typing import Any
 from app.core.exceptions import AppException
 from app.models.category_enums import CategoryFieldType
 from app.models.category_field import CategoryCoreField, CategoryOptionalField
+from app.models.job_create_intent import HIRING
 from app.models.listing_field_value import ListingFieldValue
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.listing_field_value_repository import ListingFieldValueRepository
@@ -16,9 +18,22 @@ from app.repositories.vehicle_repository import (
     VehicleBrandRepository,
     VehicleModelRepository,
 )
+from app.seeds.car_sale_v2 import LEGACY_ENUM_ALLOW
+from app.seeds.jobs_create_fields import is_jobs_create_intent_required
 from app.services.category_text import normalize_alias_keys, normalize_text
 
-_SKIP_FIELD_KEYS = frozenset({"title", "description", "price", "currency"})
+# Listing-root / UI companions — never treated as category EAV fields.
+# `price_currency` is the Flutter UI key for listing.currency (same contract).
+_SKIP_FIELD_KEYS = frozenset(
+    {"title", "description", "price", "currency", "price_currency"}
+)
+
+# Pinned create-flow geo: may be persisted even when absent from category_core_fields
+# (e.g. Jobs V2 — Region/City are UI-pinned, not schema fields).
+_PINNED_GEO_FIELD_KEYS = frozenset({"city", "region"})
+
+_MULTI_SELECT_SEPARATOR = "||"
+_TIME_PATTERN = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)$")
 
 
 @dataclass(frozen=True)
@@ -53,15 +68,24 @@ class ListingFieldValueService:
         listing_id: int,
         category_id: int,
         known_fields: dict[str, Any],
+        create_intent: str | None = None,
     ) -> list[ListingFieldValue]:
-        definitions = await self._load_definitions(category_id)
+        definitions = await self._load_definitions(
+            category_id,
+            create_intent=create_intent,
+        )
         rows = await self._build_rows(
             known_fields=known_fields,
             definitions=definitions,
         )
         return await self._field_values.replace_for_listing(listing_id, rows)
 
-    async def _load_definitions(self, category_id: int) -> dict[str, _FieldDefinition]:
+    async def _load_definitions(
+        self,
+        category_id: int,
+        *,
+        create_intent: str | None = None,
+    ) -> dict[str, _FieldDefinition]:
         category = await self._categories.get_with_intelligence(category_id)
         if category is None:
             raise AppException(
@@ -69,8 +93,20 @@ class ListingFieldValueService:
                 status_code=404,
                 code="ENTITY_NOT_FOUND",
             )
+        intent = (create_intent or "").strip() or None
+        if intent is None and is_jobs_create_intent_required(
+            getattr(category, "slug", None)
+        ):
+            # Pre-V2 listings: treat as employer-side hiring schema.
+            intent = HIRING
         defs: dict[str, _FieldDefinition] = {}
         for row in category.core_fields:
+            row_intent = getattr(row, "create_intent", None)
+            if intent is None:
+                if row_intent is not None:
+                    continue
+            elif row_intent != intent:
+                continue
             defs[row.field_key] = _FieldDefinition(
                 field_key=row.field_key,
                 field_type=row.field_type,
@@ -106,11 +142,19 @@ class ListingFieldValueService:
 
             definition = definitions.get(field_key)
             if definition is None:
-                raise AppException(
-                    f"Unknown field_key '{field_key}' for category",
-                    status_code=400,
-                    code="INVALID_LISTING_FIELD",
-                )
+                if field_key in _PINNED_GEO_FIELD_KEYS:
+                    definition = _FieldDefinition(
+                        field_key=field_key,
+                        field_type=CategoryFieldType.city,
+                        is_required=False,
+                        options=None,
+                    )
+                else:
+                    raise AppException(
+                        f"Unknown field_key '{field_key}' for category",
+                        status_code=400,
+                        code="INVALID_LISTING_FIELD",
+                    )
 
             row = ListingFieldValue(field_key=field_key)
             if definition.field_type == CategoryFieldType.brand:
@@ -118,10 +162,19 @@ class ListingFieldValueService:
                 row.ref_brand_id = brand_id
                 resolved_brand_id = brand_id
             elif definition.field_type == CategoryFieldType.model:
+                brand_raw = (
+                    known_fields.get("brand")
+                    or known_fields.get("vehicle_brand")
+                )
                 model_id, brand_id = await self._resolve_model_id(
                     raw_value,
                     brand_id=resolved_brand_id
-                    or await self._resolve_brand_id(known_fields.get("brand")),
+                    or (
+                        await self._resolve_brand_id(brand_raw)
+                        if brand_raw is not None
+                        and str(brand_raw).strip()
+                        else None
+                    ),
                 )
                 row.ref_model_id = model_id
                 if brand_id is not None:
@@ -263,24 +316,36 @@ class ListingFieldValueService:
 
         if field_type in {CategoryFieldType.number, CategoryFieldType.year}:
             try:
-                row.value_int = int(str(raw_value).strip())
+                row.value_int = int(str(raw_value).strip().replace(" ", ""))
             except ValueError as exc:
                 raise AppException(
                     f"Field '{definition.field_key}' must be an integer",
                     status_code=400,
                     code="INVALID_LISTING_FIELD",
                 ) from exc
+            ListingFieldValueService._validate_numeric_bounds(
+                definition, float(row.value_int)
+            )
+            row.value_int = ListingFieldValueService._canonicalize_int_choice(
+                definition, row.value_int
+            )
             return
 
         if field_type in {CategoryFieldType.decimal, CategoryFieldType.price}:
             try:
-                row.value_decimal = Decimal(str(raw_value).strip())
+                row.value_decimal = Decimal(str(raw_value).strip().replace(",", "."))
             except InvalidOperation as exc:
                 raise AppException(
                     f"Field '{definition.field_key}' must be a decimal",
                     status_code=400,
                     code="INVALID_LISTING_FIELD",
                 ) from exc
+            ListingFieldValueService._validate_numeric_bounds(
+                definition, float(row.value_decimal)
+            )
+            row.value_decimal = ListingFieldValueService._canonicalize_decimal_choice(
+                definition, row.value_decimal
+            )
             return
 
         if field_type == CategoryFieldType.boolean:
@@ -300,6 +365,54 @@ class ListingFieldValueService:
                 code="INVALID_LISTING_FIELD",
             )
 
+        if field_type == CategoryFieldType.multi_select:
+            values = ListingFieldValueService._parse_multi_select_values(raw_value)
+            if not values:
+                raise AppException(
+                    f"Field '{definition.field_key}' cannot be empty",
+                    status_code=400,
+                    code="INVALID_LISTING_FIELD",
+                )
+            for value in values:
+                ListingFieldValueService._validate_enum_option(definition, value)
+            row.value_text = _MULTI_SELECT_SEPARATOR.join(values)
+            return
+
+        if field_type == CategoryFieldType.time:
+            value = str(raw_value).strip()
+            if not value:
+                raise AppException(
+                    f"Field '{definition.field_key}' cannot be empty",
+                    status_code=400,
+                    code="INVALID_LISTING_FIELD",
+                )
+            match = _TIME_PATTERN.match(value)
+            if match is None:
+                raise AppException(
+                    f"Field '{definition.field_key}' must be HH:MM",
+                    status_code=400,
+                    code="INVALID_LISTING_FIELD",
+                )
+            hour = int(match.group(1))
+            minute = match.group(2)
+            # Prefer option spelling when present ("9:00" vs "09:00").
+            candidates = [value, f"{hour}:{minute}", f"{hour:02d}:{minute}"]
+            stored = ListingFieldValueService._first_allowed_option(
+                definition,
+                candidates,
+            )
+            if stored is None:
+                options = definition.options or {}
+                if options.get("values") or options.get("choices"):
+                    raise AppException(
+                        f"Invalid value for field '{definition.field_key}'",
+                        status_code=400,
+                        code="INVALID_LISTING_FIELD",
+                    )
+                stored = f"{hour:02d}:{minute}"
+            row.value_text = stored
+            return
+
         raise AppException(
             f"Unsupported field type for '{definition.field_key}'",
             status_code=400,
@@ -307,15 +420,164 @@ class ListingFieldValueService:
         )
 
     @staticmethod
-    def _validate_enum_option(definition: _FieldDefinition, value: str) -> None:
+    def _parse_multi_select_values(raw_value: Any) -> list[str]:
+        if isinstance(raw_value, (list, tuple)):
+            return [
+                str(item).strip()
+                for item in raw_value
+                if str(item).strip()
+            ]
+        text = str(raw_value).strip()
+        if not text:
+            return []
+        if _MULTI_SELECT_SEPARATOR in text:
+            return [
+                part.strip()
+                for part in text.split(_MULTI_SELECT_SEPARATOR)
+                if part.strip()
+            ]
+        return [text]
+
+    @staticmethod
+    def _allowed_option_values(definition: _FieldDefinition) -> dict[str, str]:
+        """Map normalized option → original option string for storage."""
         options = definition.options or {}
         allowed = options.get("values") or options.get("choices")
         if not allowed:
+            return {}
+        out: dict[str, str] = {}
+        for item in allowed:
+            if isinstance(item, dict):
+                raw = item.get("value") or item.get("id") or item.get("key")
+                if raw is None:
+                    continue
+                text = str(raw).strip()
+            elif isinstance(item, (list, tuple)) and item:
+                text = str(item[0]).strip()
+            else:
+                text = str(item).strip()
+            if text:
+                out[text.lower()] = text
+        return out
+
+    @staticmethod
+    def _first_allowed_option(
+        definition: _FieldDefinition,
+        candidates: list[str],
+    ) -> str | None:
+        allowed = ListingFieldValueService._allowed_option_values(definition)
+        if not allowed:
+            return None
+        for candidate in candidates:
+            hit = allowed.get(candidate.strip().lower())
+            if hit is not None:
+                return hit
+        return None
+
+    @staticmethod
+    def _validate_enum_option(definition: _FieldDefinition, value: str) -> None:
+        allowed = ListingFieldValueService._allowed_option_values(definition)
+        if not allowed:
             return
-        normalized_allowed = {str(item).strip().lower() for item in allowed}
-        if value.strip().lower() not in normalized_allowed:
+        normalized = value.strip().lower()
+        if normalized in allowed:
+            return
+        legacy = LEGACY_ENUM_ALLOW.get(definition.field_key)
+        if legacy and value.strip() in legacy:
+            # Historical edit round-trip only — not offered as new Create options.
+            return
+        raise AppException(
+            f"Invalid value for field '{definition.field_key}'",
+            status_code=400,
+            code="INVALID_LISTING_FIELD",
+        )
+
+    @staticmethod
+    def _canonicalize_decimal_choice(
+        definition: _FieldDefinition,
+        value: Decimal,
+    ) -> Decimal:
+        """When schema exposes discrete picker choices, accept only those values.
+
+        Exact Decimal match only — never round (e.g. 2.25 must not become 2.2).
+        """
+        allowed = ListingFieldValueService._allowed_option_values(definition)
+        if not allowed:
+            return value
+        for opt in allowed.values():
+            try:
+                if Decimal(str(opt)) == value:
+                    return Decimal(str(opt))
+            except (InvalidOperation, TypeError, ValueError):
+                continue
+        raise AppException(
+            f"Invalid value for field '{definition.field_key}'",
+            status_code=400,
+            code="INVALID_LISTING_FIELD",
+        )
+
+    @staticmethod
+    def _canonicalize_int_choice(
+        definition: _FieldDefinition,
+        value: int,
+    ) -> int:
+        """When schema exposes discrete picker choices, accept only those ints."""
+        allowed = ListingFieldValueService._allowed_option_values(definition)
+        if not allowed:
+            return value
+        for opt in allowed.values():
+            try:
+                if int(str(opt).strip()) == value:
+                    return int(str(opt).strip())
+            except (TypeError, ValueError):
+                continue
+        raise AppException(
+            f"Invalid value for field '{definition.field_key}'",
+            status_code=400,
+            code="INVALID_LISTING_FIELD",
+        )
+
+    @staticmethod
+    def _validate_numeric_bounds(definition: _FieldDefinition, value: float) -> None:
+        options = definition.options or {}
+        raw_min = options.get("min")
+        raw_max = options.get("max")
+        if raw_min is not None:
+            try:
+                if value < float(raw_min):
+                    raise AppException(
+                        f"Field '{definition.field_key}' is below minimum",
+                        status_code=400,
+                        code="INVALID_LISTING_FIELD",
+                    )
+            except (TypeError, ValueError):
+                pass
+        if raw_max is not None:
+            try:
+                if value > float(raw_max):
+                    raise AppException(
+                        f"Field '{definition.field_key}' is above maximum",
+                        status_code=400,
+                        code="INVALID_LISTING_FIELD",
+                    )
+            except (TypeError, ValueError):
+                pass
+        if definition.field_key == "year":
+            if value < 1960 or value > date.today().year + 1:
+                raise AppException(
+                    f"Field '{definition.field_key}' is out of range",
+                    status_code=400,
+                    code="INVALID_LISTING_FIELD",
+                )
+        if definition.field_key == "mileage" and value < 0:
             raise AppException(
-                f"Invalid value for field '{definition.field_key}'",
+                f"Field '{definition.field_key}' cannot be negative",
+                status_code=400,
+                code="INVALID_LISTING_FIELD",
+            )
+        if definition.field_key == "engine_volume" and value <= 0:
+            raise AppException(
+                f"Field '{definition.field_key}' must be positive",
                 status_code=400,
                 code="INVALID_LISTING_FIELD",
             )

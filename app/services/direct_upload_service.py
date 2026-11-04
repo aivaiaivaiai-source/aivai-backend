@@ -31,6 +31,13 @@ from app.storage.keys import listing_original_key
 
 logger = logging.getLogger(__name__)
 
+
+class _OrderSlotIdempotentHit(Exception):
+    def __init__(self, media: Media) -> None:
+        self.media = media
+        super().__init__()
+
+
 _PENDING_URL = "/media/.pending"
 _MAX_IMAGES_PER_LISTING = 9
 
@@ -65,6 +72,41 @@ class DirectUploadService:
         if not self._settings.MEDIA_DIRECT_UPLOAD_ENABLED:
             raise AppException("Direct upload is not enabled.", status_code=404)
 
+    @staticmethod
+    def _is_reclaimable_uploading(media: Media, *, now: datetime) -> bool:
+        return (
+            media.lifecycle_status == MediaLifecycleStatus.uploading
+            and media.upload_expires_at is not None
+            and media.upload_expires_at < now
+        )
+
+    async def _resolve_order_slot(
+        self,
+        existing: list[Media],
+        *,
+        body: DirectUploadInitiateRequest,
+        now: datetime,
+    ) -> int:
+        if body.order is None:
+            return max((m.order for m in existing), default=-1) + 1
+
+        order = body.order
+        for media in list(existing):
+            if media.order != order:
+                continue
+            if str(media.client_upload_id) == str(body.client_upload_id):
+                metrics.incr("upload_initiate_idempotent_total")
+                raise _OrderSlotIdempotentHit(media)
+            if self._is_reclaimable_uploading(media, now=now):
+                await self._media.delete(media)
+                existing.remove(media)
+                continue
+            raise AppException(
+                "Photo order slot already reserved for this listing.",
+                status_code=409,
+            )
+        return order
+
     async def initiate(
         self,
         listing_id: int,
@@ -75,7 +117,7 @@ class DirectUploadService:
         self._ensure_enabled()
         await MEDIA_UPLOAD_INITIATE_LIMITER.hit(f"media-upload:{actor_user_id}")
 
-        listing = await self._listings.get_by_id(listing_id, for_update=True)
+        listing = await self._listings.get_by_id(listing_id)
         if listing is None:
             raise EntityNotFoundError("Listing", entity_id=listing_id)
         self._ensure_owner(listing, actor_user_id)
@@ -109,19 +151,44 @@ class DirectUploadService:
                 status_code=400,
             )
 
-        ext = self._storage.ext_from_content_type(body.content_type)
         now = datetime.now(UTC)
+        try:
+            order = await self._resolve_order_slot(existing, body=body, now=now)
+        except _OrderSlotIdempotentHit as exc:
+            return await self._build_initiate_response(exc.media, body)
+
+        listing = await self._listings.get_by_id(listing_id, for_update=True)
+        if listing is None:
+            raise EntityNotFoundError("Listing", entity_id=listing_id)
+        self._ensure_owner(listing, actor_user_id)
+
+        hit = await self._media.get_by_listing_and_client_upload_id(
+            listing_id,
+            body.client_upload_id,
+        )
+        if hit is not None:
+            if body.content_sha256 and hit.content_sha256 and hit.content_sha256 != body.content_sha256:
+                raise AppException(
+                    "client_upload_id already used with different content.",
+                    status_code=409,
+                )
+            metrics.incr("upload_initiate_idempotent_total")
+            return await self._build_initiate_response(hit, body)
+
+        existing = await self._media.list_by_listing(listing_id)
+        if len(existing) >= _MAX_IMAGES_PER_LISTING:
+            raise AppException(
+                f"A listing may have at most {_MAX_IMAGES_PER_LISTING} images.",
+                status_code=400,
+            )
+
+        try:
+            order = await self._resolve_order_slot(existing, body=body, now=now)
+        except _OrderSlotIdempotentHit as exc:
+            return await self._build_initiate_response(exc.media, body)
+
+        ext = self._storage.ext_from_content_type(body.content_type)
         expires = now + timedelta(seconds=self._settings.MEDIA_UPLOAD_RESERVATION_TTL_SECONDS)
-        if body.order is not None:
-            order = body.order
-            for media in existing:
-                if media.order == order:
-                    raise AppException(
-                        "Photo order slot already reserved for this listing.",
-                        status_code=409,
-                    )
-        else:
-            order = max((m.order for m in existing), default=-1) + 1
 
         row = Media(
             url=_PENDING_URL,
@@ -278,6 +345,7 @@ class DirectUploadService:
         now = datetime.now(UTC)
         media.upload_completed_at = now
         async_enabled = self._settings.MEDIA_ASYNC_PIPELINE_ENABLED
+        category_known = listing.category_id is not None
 
         if async_enabled:
             media.lifecycle_status = MediaLifecycleStatus.queued
@@ -285,19 +353,78 @@ class DirectUploadService:
             media.pipeline_version = self._settings.MEDIA_ASYNC_PIPELINE_VERSION
             media.url = _PENDING_URL
             await self._session.flush()
-            from app.media_queue.job_service import MediaJobService
+            # Category-aware Media Engine waits until category is confirmed.
+            if category_known:
+                from app.media_queue.job_service import MediaJobService
 
-            await MediaJobService(self._session, self._settings).enqueue_for_media(
-                media.id,
-                pipeline_version=self._settings.MEDIA_ASYNC_PIPELINE_VERSION,
+                await MediaJobService(self._session, self._settings).enqueue_for_media(
+                    media.id,
+                    pipeline_version=self._settings.MEDIA_ASYNC_PIPELINE_VERSION,
+                    category_id=listing.category_id,
+                )
+            else:
+                from app.services.media_classification_service import (
+                    maybe_enqueue_classification_after_upload,
+                )
+
+                await maybe_enqueue_classification_after_upload(
+                    self._session,
+                    listing.id,
+                    settings=self._settings,
+                )
+            from app.services.visual_evidence_service import (
+                maybe_enqueue_visual_evidence_after_upload,
+            )
+
+            await maybe_enqueue_visual_evidence_after_upload(
+                self._session,
+                listing.id,
+                settings=self._settings,
             )
             await self._session.commit()
-            await self._best_effort_dispatch_outbox()
+            if category_known:
+                await self._best_effort_dispatch_outbox()
             metrics.incr("upload_completed_total")
             return DirectUploadCompleteResponse(
                 media_id=media.id,
                 status=MediaLifecycleStatus.queued,
-                queued=True,
+                queued=category_known,
+            )
+
+        if not category_known:
+            # Sync path without category: keep original stored, defer engine/AUTO.
+            delivery = self._delivery
+            original_url = delivery.original_url(key, fallback=self._storage.public_url(key))
+            media.url = original_url or self._storage.public_url(key)
+            media.original_url = original_url
+            media.display_url = media.url
+            media.lifecycle_status = MediaLifecycleStatus.queued
+            media.moderation_status = MediaModerationStatus.pending
+            media.pipeline_version = self._settings.MEDIA_ASYNC_PIPELINE_VERSION
+            from app.services.media_classification_service import (
+                maybe_enqueue_classification_after_upload,
+            )
+
+            await maybe_enqueue_classification_after_upload(
+                self._session,
+                listing.id,
+                settings=self._settings,
+            )
+            from app.services.visual_evidence_service import (
+                maybe_enqueue_visual_evidence_after_upload,
+            )
+
+            await maybe_enqueue_visual_evidence_after_upload(
+                self._session,
+                listing.id,
+                settings=self._settings,
+            )
+            await self._session.commit()
+            metrics.incr("upload_completed_total")
+            return DirectUploadCompleteResponse(
+                media_id=media.id,
+                status=MediaLifecycleStatus.queued,
+                queued=False,
             )
 
         pipeline = self._moderation_pipeline

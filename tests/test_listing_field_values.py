@@ -119,6 +119,106 @@ async def test_invalid_field_key_rejected() -> None:
 
 
 @pytest.mark.asyncio
+async def test_price_currency_skipped_as_listing_level_key() -> None:
+    svc = _service(
+        category=_category_with_fields(
+            core=[("job_role", CategoryFieldType.enum)],
+        )
+    )
+    rows = await svc.replace_from_known_fields(
+        listing_id=1,
+        category_id=10,
+        known_fields={
+            "job_role": "Программист",
+            "price": "60000",
+            "currency": "KGS",
+            "price_currency": "СОМ",
+        },
+    )
+    assert [r.field_key for r in rows] == ["job_role"]
+
+
+@pytest.mark.asyncio
+async def test_pinned_geo_city_allowed_without_schema_field() -> None:
+    """Canonical geo: city persists even when absent from category_core_fields."""
+    svc = _service(
+        category=_category_with_fields(
+            core=[("job_role", CategoryFieldType.enum)],
+        )
+    )
+    rows = await svc.replace_from_known_fields(
+        listing_id=1,
+        category_id=10,
+        known_fields={"city": "Бишкек", "job_role": "Программист"},
+    )
+    by_key = {row.field_key: row for row in rows}
+    assert by_key["city"].value_text == "Бишкек"
+    assert by_key["job_role"].value_text == "Программист"
+
+
+@pytest.mark.asyncio
+async def test_multi_select_persists_pipe_joined_and_validates_options() -> None:
+    svc = _service(
+        category=_category_with_fields(
+            core=[
+                (
+                    "job_conditions",
+                    CategoryFieldType.multi_select,
+                )
+            ]
+        )
+    )
+    # Attach options onto the mock core field.
+    cat = await svc._categories.get_with_intelligence(10)
+    cat.core_fields[0].options = {
+        "choices": [
+            {"value": "Обучение", "label": "Обучение"},
+            {"value": "Развоз", "label": "Развоз"},
+            {"value": "Бесплатное питание", "label": "Бесплатное питание"},
+        ]
+    }
+    rows = await svc.replace_from_known_fields(
+        listing_id=1,
+        category_id=10,
+        known_fields={
+            "job_conditions": "Обучение||Развоз||Бесплатное питание",
+        },
+    )
+    assert len(rows) == 1
+    assert rows[0].value_text == "Обучение||Развоз||Бесплатное питание"
+
+    with pytest.raises(AppException) as exc:
+        await svc.replace_from_known_fields(
+            listing_id=1,
+            category_id=10,
+            known_fields={"job_conditions": "Обучение||Неизвестное"},
+        )
+    assert exc.value.error_code == "INVALID_LISTING_FIELD"
+
+
+@pytest.mark.asyncio
+async def test_time_persists_as_value_text() -> None:
+    svc = _service(
+        category=_category_with_fields(
+            core=[("work_hours_from", CategoryFieldType.time)]
+        )
+    )
+    cat = await svc._categories.get_with_intelligence(10)
+    cat.core_fields[0].options = {
+        "choices": [
+            {"value": "9:00", "label": "9:00"},
+            {"value": "18:00", "label": "18:00"},
+        ]
+    }
+    rows = await svc.replace_from_known_fields(
+        listing_id=1,
+        category_id=10,
+        known_fields={"work_hours_from": "09:00"},
+    )
+    assert rows[0].value_text == "9:00"
+
+
+@pytest.mark.asyncio
 async def test_wrong_type_rejected() -> None:
     svc = _service(category=_category_with_fields(core=[("year", CategoryFieldType.year)]))
     with pytest.raises(AppException) as exc:

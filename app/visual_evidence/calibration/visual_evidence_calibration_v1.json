@@ -1,0 +1,58 @@
+{
+  "calibration_version": "visual-evidence-calibration-v1",
+  "model_version": "local-visual-evidence-v0-siglip2-base",
+  "prompt_version": "visual-evidence-prompts-v1",
+  "prompt_hash": "33847d54b54e395d",
+  "dataset_version": "aivai-private-seed-v1",
+  "mapping_version": "gt-visual-mapping-v1",
+  "aggregation": "max_score_per_concept",
+  "policy": {
+    "family": "absolute_threshold",
+    "min_evidence_score": 0.01,
+    "min_margin": 0.0,
+    "max_observations": 3,
+    "exclude_concepts": [
+      "UNKNOWN_VISUAL"
+    ],
+    "score_semantics": "evidence_score \u2014 sigmoid similarity, NOT calibrated probability"
+  },
+  "selection": {
+    "selected_on": "calibration_subset",
+    "utility_score": 0.5723809523809523,
+    "calibration_metrics": {
+      "subset": "calibration",
+      "primary_total": 105,
+      "coverage": 0.14285714285714285,
+      "no_match_rate": 0.8571428571428571,
+      "top1_visual_family_accuracy": 0.8,
+      "top3_visual_family_recall": 0.9333333333333333,
+      "accepted_accuracy": 1.0,
+      "false_accept_rate": 0.0,
+      "accepted_count": 15,
+      "false_accepts": 0,
+      "per_slug_support": {
+        "CAR_SALE": 38,
+        "AUTO_PARTS": 20,
+        "MOTORCYCLES": 3,
+        "COMMERCIAL_TRANSPORT": 6,
+        "TRUCK_TRANSPORT": 5,
+        "SPECIAL_MACHINERY": 17,
+        "BUSES": 4,
+        "WATER_TRANSPORT": 4,
+        "REAL_ESTATE": 8
+      },
+      "per_slug_accepted_correct": {
+        "CAR_SALE": 2,
+        "AUTO_PARTS": 1,
+        "COMMERCIAL_TRANSPORT": 1,
+        "TRUCK_TRANSPORT": 1,
+        "BUSES": 4,
+        "WATER_TRANSPORT": 2,
+        "REAL_ESTATE": 4
+      },
+      "confusion_pairs": {}
+    }
+  },
+  "report_dir": "20260831T080515Z_6e81d52b",
+  "generated_at": "2026-08-31T08:05:54.327665+00:00"
+}

@@ -1,12 +1,15 @@
 from decimal import Decimal
+import json
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db, get_listing_service, get_promotion_service
 from app.core.constants import MAX_LIMIT
 from app.core.rate_limit import LISTING_CREATE_LIMITER
 from app.models.enums import Currency, ListingStatus
+from app.models.category_enums import VehicleExecution
+from app.models.job_create_intent import VALID_JOB_CREATE_INTENTS
 from app.repositories.category_repository import CategoryRepository
 from app.schemas.listing import (
     ListingCreate,
@@ -20,11 +23,12 @@ from app.schemas.listing import (
 from app.schemas.user import UserRead
 from app.services.listing_service import ListingService
 from app.services.promotion_service import PromotionService
+from app.services.vehicle_execution import parse_execution
 
 router = APIRouter()
 
-# Mobile «Продажа авто» + legacy intelligence slug.
-_CAR_SALE_SLUGS = ("transport-car-sale", "transport-cars")
+# Mobile «Продажа авто» canonical slug (Phase 1 transport canonicalization).
+_CAR_SALE_SLUGS = ("transport-car-sale",)
 
 
 async def _enforce_listing_create_rate_limit(
@@ -62,6 +66,7 @@ async def get_feed(
     category_id: int | None = Query(default=None),
     category_slug: str | None = Query(default=None),
     city: str | None = Query(default=None),
+    region: str | None = Query(default=None),
     brand: str | None = Query(default=None),
     model: str | None = Query(default=None),
     year_min: int | None = Query(default=None, ge=1900, le=2100),
@@ -70,9 +75,32 @@ async def get_feed(
     engine_volume: str | None = Query(default=None),
     fuel: str | None = Query(default=None),
     transmission: str | None = Query(default=None),
+    vehicle_execution: str | None = Query(
+        default=None,
+        description="Filter by listing execution: cargo | passenger",
+    ),
+    attrs: str | None = Query(
+        default=None,
+        description=(
+            'JSON object of dynamic field filters, e.g. '
+            '{"drive":"Полный","engine_volume__min":"2.0","has_photo":"true","sort":"price_asc"}'
+        ),
+    ),
     min_price: Decimal | None = Query(default=None, ge=0),
     max_price: Decimal | None = Query(default=None, ge=0),
-    currency: Currency | None = Query(default=None),
+    currency: Currency | None = Query(
+        default=None,
+        description="Legacy alias for price_currency when filtering by min/max.",
+    ),
+    price_currency: Currency | None = Query(
+        default=None,
+        description="Currency of min_price/max_price (KGS|USD). Converted via current FX.",
+    ),
+    has_photo: bool | None = Query(default=None),
+    sort: str | None = Query(
+        default=None,
+        description="newest | price_asc | price_desc",
+    ),
     status: ListingStatus | None = Query(
         default=None,
         description=(
@@ -80,19 +108,42 @@ async def get_feed(
             "draft is never listed."
         ),
     ),
+    job_intent: str | None = Query(
+        default=None,
+        description="Jobs Search V2: hiring | job_seeking. Optional; ignored when omitted.",
+    ),
     limit: int = Query(default=20, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
 ) -> ListingFeedPage:
+    if job_intent is not None and job_intent not in VALID_JOB_CREATE_INTENTS:
+        raise HTTPException(
+            status_code=400,
+            detail="job_intent must be hiring or job_seeking",
+        )
     category_ids = await _resolve_category_ids(
         category_id=category_id,
         category_slug=category_slug,
         session=session,
     )
+    execution: VehicleExecution | None = parse_execution(vehicle_execution)
+    field_attrs: dict[str, str] | None = None
+    if attrs:
+        try:
+            parsed = json.loads(attrs)
+        except json.JSONDecodeError:
+            parsed = None
+        if isinstance(parsed, dict):
+            field_attrs = {
+                str(k): str(v)
+                for k, v in parsed.items()
+                if k is not None and v is not None and str(v).strip()
+            } or None
     return await service.get_feed(
         q=q,
         category_id=None if category_ids else category_id,
         category_ids=category_ids,
         city=city,
+        region=region,
         brand=brand,
         model=model,
         year_min=year_min,
@@ -101,10 +152,16 @@ async def get_feed(
         engine_volume=engine_volume,
         fuel=fuel,
         transmission=transmission,
+        vehicle_execution=execution,
+        field_attrs=field_attrs,
         min_price=min_price,
         max_price=max_price,
         currency=currency,
+        price_currency=price_currency,
         status=status,
+        job_intent=job_intent,
+        has_photo=has_photo,
+        sort=sort,
         limit=limit,
         offset=offset,
     )

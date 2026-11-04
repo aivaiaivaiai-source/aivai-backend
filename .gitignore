@@ -14,6 +14,9 @@ env/
 .env.*
 !.env.example
 
+# Local rollback snapshots / scratch (not source of truth)
+.local/
+
 # IDE
 .idea/
 .vscode/
@@ -48,6 +51,16 @@ media/
 
 # Uploads
 uploads/
+
+# Media classification offline benchmark — local datasets & generated runs
+benchmarks/media_classification/data/
+benchmarks/media_classification/images/
+benchmarks/media_classification/local/
+benchmarks/media_classification/reports/*/
+!benchmarks/media_classification/reports/.gitkeep
+benchmarks/visual_evidence_calibration/reports/*/
+!benchmarks/visual_evidence_calibration/reports/.gitkeep
+benchmarks/visual_evidence_calibration/_ve_prompt_overlay.json
 
 # Database dumps
 backups/

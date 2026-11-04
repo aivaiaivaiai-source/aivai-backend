@@ -12,11 +12,13 @@ from app.core.constants import (
     MAX_LISTING_FIELD_VALUE_LENGTH,
     MAX_LISTING_FIELDS,
 )
+from app.models.category_enums import VehicleExecution
 from app.models.enums import Currency, ListingStatus
+from app.models.job_create_intent import VALID_JOB_CREATE_INTENTS
 from app.schemas.category import CategoryRead
 from app.schemas.media import MediaRead
 
-ListingFieldScalar = str | int | float | bool
+ListingFieldScalar = str | int | float | bool | dict[str, Any]
 
 
 class ListingFeedPage(BaseModel):
@@ -26,8 +28,20 @@ class ListingFeedPage(BaseModel):
     total: int = Field(ge=0)
 
 
+def _ref_presentation(ref_id: int, related: Any) -> ListingFieldScalar:
+    """Backward-compatible: int when label unknown; {id, label} when loaded."""
+    name = getattr(related, "name", None) if related is not None else None
+    if isinstance(name, str) and name.strip():
+        return {"id": ref_id, "label": name.strip()}
+    return ref_id
+
+
 def serialize_listing_fields(rows: list[Any]) -> dict[str, ListingFieldScalar]:
-    """Stable JSON map from EAV rows. Brand/model expose catalog ids, not labels."""
+    """Stable JSON map from EAV rows.
+
+    Brand/model: prefer ``{id, label}`` when relationship is loaded; else bare id
+    (legacy clients already resolve ids via Vehicle Catalog).
+    """
     out: dict[str, ListingFieldScalar] = {}
     for row in rows:
         key = getattr(row, "field_key", None)
@@ -45,9 +59,15 @@ def serialize_listing_fields(rows: list[Any]) -> dict[str, ListingFieldScalar]:
             value_date: date = row.value_date
             out[key] = value_date.isoformat()
         elif row.ref_brand_id is not None:
-            out[key] = row.ref_brand_id
+            out[key] = _ref_presentation(
+                row.ref_brand_id,
+                getattr(row, "ref_brand", None),
+            )
         elif row.ref_model_id is not None:
-            out[key] = row.ref_model_id
+            out[key] = _ref_presentation(
+                row.ref_model_id,
+                getattr(row, "ref_model", None),
+            )
     return out
 
 
@@ -55,12 +75,27 @@ class ListingCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=MAX_LISTING_DESCRIPTION_LENGTH)
     price: Decimal = Field(..., ge=0)
-    category_id: int = Field(..., ge=1)
+    # Null = unknown category (draft + early photo upload). Required for active.
+    category_id: int | None = Field(default=None, ge=1)
     currency: Currency = Currency.KGS
     # Internal callers (voice/assistant) may set status. Public HTTP always forces draft.
     status: ListingStatus = ListingStatus.draft
     uses_placeholder_image: bool = False
+    # Exactly one selected execution when the model requires it (SoT on listing).
+    vehicle_execution: VehicleExecution | None = None
+    # Jobs V2: hiring | job_seeking. Null for non-jobs / legacy.
+    job_intent: str | None = None
     fields: dict[str, ListingFieldScalar] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def category_required_when_active(self) -> ListingCreate:
+        if self.status == ListingStatus.active and self.category_id is None:
+            raise ValueError("category_id is required when status is active")
+        if self.category_id is None and self.fields:
+            raise ValueError("fields require category_id")
+        if self.job_intent is not None and self.job_intent not in VALID_JOB_CREATE_INTENTS:
+            raise ValueError("job_intent must be hiring or job_seeking")
+        return self
 
     @field_validator("title")
     @classmethod
@@ -115,6 +150,8 @@ class ListingUpdate(BaseModel):
     price: Decimal | None = Field(default=None, ge=0)
     currency: Currency | None = None
     category_id: int | None = Field(default=None, ge=1)
+    vehicle_execution: VehicleExecution | None = None
+    job_intent: str | None = None
     fields: dict[str, ListingFieldScalar] | None = None
     # Status changes only via PATCH /listings/{id}/status (photo policy + future moderation).
 
@@ -127,6 +164,15 @@ class ListingUpdate(BaseModel):
         if value is None:
             return None
         return ListingCreate.validate_fields(value)
+
+    @field_validator("job_intent")
+    @classmethod
+    def validate_job_intent(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if value not in VALID_JOB_CREATE_INTENTS:
+            raise ValueError("job_intent must be hiring or job_seeking")
+        return value
 
 
 class ListingStatusUpdate(BaseModel):
@@ -146,10 +192,13 @@ class ListingRead(BaseModel):
     description: str | None
     price: Decimal
     currency: Currency
+    # Currency V2: publication/repricing FX snapshot (USD→KGS). Client formats cards.
+    exchange_rate_snapshot: Decimal | None = None
     status: ListingStatus
     owner_id: int | None
-    category_id: int
-    category: CategoryRead
+    category_id: int | None = None
+    category_selection_source: str | None = None
+    category: CategoryRead | None = None
     images: list[MediaRead] = Field(default_factory=list)
     uses_placeholder_image: bool = False
     is_promoted: bool = False
@@ -158,6 +207,8 @@ class ListingRead(BaseModel):
     promotion_starts_at: datetime | None = None
     promotion_ends_at: datetime | None = None
     promotion_days_left: int = 0
+    vehicle_execution: VehicleExecution | None = None
+    job_intent: str | None = None
     fields: dict[str, ListingFieldScalar] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime

@@ -34,8 +34,28 @@ class CategoryRoutingService:
     )
 
     _STATIC_ROUTES: tuple[_StaticRoute, ...] = (
+        # Sale intent for evacuator vehicle → Cargo (before bare service route).
         _StaticRoute(
-            (re.compile(r"привез|перевоз|достав|эвакуатор|грузоперевоз", re.I),),
+            (
+                re.compile(
+                    r"прода(?:ю|ть|ётся|ется)|продам|продажа",
+                    re.I,
+                ),
+                re.compile(r"эвакуатор", re.I),
+            ),
+            "transport-cargo-evakuatory",
+            "evacuator vehicle sale",
+            0.93,
+        ),
+        # Bare / service evacuator → Auto Services (not generic services-transport).
+        _StaticRoute(
+            (re.compile(r"эвакуатор|эвакуац", re.I),),
+            "transport-auto-services-evakuatsiya-i-pomosch-na-doroge",
+            "auto services towing / road assistance",
+            0.91,
+        ),
+        _StaticRoute(
+            (re.compile(r"привез|перевоз|достав|грузоперевоз", re.I),),
             "services-transport",
             "service action (transport/delivery)",
             0.9,
@@ -75,7 +95,7 @@ class CategoryRoutingService:
                 re.compile(r"прода(?:ю|ть)|продам", re.I),
                 re.compile(r"камаз|газель|авто|машин|bmw|toyota|mercedes", re.I),
             ),
-            "transport-cars",
+            "transport-car-sale",
             "vehicle object listing",
             0.86,
         ),

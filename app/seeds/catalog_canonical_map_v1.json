@@ -1,0 +1,81 @@
+{
+  "version": "catalog-canonical-map-v1",
+  "description": "Transport legacy v1 → mobile v2 canonical mappings (Phase 1)",
+  "mappings": [
+    {
+      "legacy_id": 606,
+      "legacy_slug": "transport-cars",
+      "canonical_id": 681,
+      "canonical_slug": "transport-car-sale",
+      "mapping_type": "exact",
+      "reason": "exact_semantic_duplicate_car_sale",
+      "migration_status": "completed",
+      "intelligence_actions": ["merge_filters", "merge_aliases"]
+    },
+    {
+      "legacy_id": 607,
+      "legacy_slug": "transport-parts",
+      "canonical_id": 682,
+      "canonical_slug": "transport-auto-parts",
+      "mapping_type": "split_primary",
+      "reason": "parts_primary_core_and_part_aliases",
+      "migration_status": "completed",
+      "intelligence_actions": ["merge_core", "merge_aliases_split"],
+      "alias_split": {
+        "transport-auto-parts": ["запчасти", "аккумулятор", "бампер", "фара"],
+        "transport-tires-wheels": ["шины", "диски"]
+      }
+    },
+    {
+      "legacy_id": 608,
+      "legacy_slug": "transport-trucks",
+      "canonical_id": 691,
+      "canonical_slug": "transport-cargo",
+      "mapping_type": "split_primary",
+      "reason": "cargo_trucks_primary",
+      "migration_status": "completed",
+      "intelligence_actions": ["merge_core", "merge_aliases_split", "update_routing_kamaz_sale"],
+      "alias_split": {
+        "transport-cargo": ["грузовик", "камаз", "газель", "фура"],
+        "transport-special-equipment": ["спецтехника"]
+      },
+      "secondary_canonical": {
+        "id": 690,
+        "slug": "transport-special-equipment"
+      }
+    },
+    {
+      "legacy_id": 609,
+      "legacy_slug": "transport-moto",
+      "canonical_id": 686,
+      "canonical_slug": "transport-moto-tech",
+      "mapping_type": "exact",
+      "reason": "moto_expanded_to_moto_tech",
+      "migration_status": "completed",
+      "intelligence_actions": ["merge_core", "merge_aliases"]
+    },
+    {
+      "legacy_id": 610,
+      "legacy_slug": "transport-water",
+      "canonical_id": 692,
+      "canonical_slug": "transport-watercraft",
+      "mapping_type": "exact",
+      "reason": "water_semantic_match",
+      "migration_status": "completed",
+      "intelligence_actions": ["merge_core"]
+    }
+  ],
+  "legacy_transport_ids": [606, 607, 608, 609, 610],
+  "legacy_id_remap_for_ai_search_tasks": {
+    "606": 681,
+    "609": 686,
+    "610": 692
+  },
+  "routing_rule_updates": [
+    {
+      "rule_name": "kamaz_sale",
+      "from_slug": "transport-trucks",
+      "to_slug": "transport-cargo"
+    }
+  ]
+}

@@ -202,3 +202,52 @@ async def test_initiate_without_order_falls_back_to_next() -> None:
         )
     create_call = media_repo.create.await_args.args[0]
     assert create_call.order == 1
+
+
+@pytest.mark.asyncio
+async def test_initiate_reclaims_expired_uploading_at_order() -> None:
+    expired = _media_row(
+        media_id=50,
+        order=2,
+        client_upload_id=uuid4(),
+    )
+    expired.upload_expires_at = datetime.now(UTC) - timedelta(hours=1)
+    svc, media_repo, _ = _service(existing=[expired])
+    media_repo.delete = AsyncMock(return_value=True)
+    with patch("app.services.direct_upload_service.MEDIA_UPLOAD_INITIATE_LIMITER") as lim:
+        lim.hit = AsyncMock()
+        await svc.initiate(
+            1,
+            actor_user_id=2,
+            body=DirectUploadInitiateRequest(
+                client_upload_id=uuid4(),
+                content_type="image/jpeg",
+                content_length=100,
+                order=2,
+            ),
+        )
+    media_repo.delete.assert_awaited_once()
+    create_call = media_repo.create.await_args.args[0]
+    assert create_call.order == 2
+
+
+@pytest.mark.asyncio
+async def test_initiate_order_conflict_same_client_idempotent() -> None:
+    client_id = uuid4()
+    hit = _media_row(media_id=77, order=2, client_upload_id=client_id)
+    svc, media_repo, _ = _service(existing=[hit])
+    media_repo.get_by_listing_and_client_upload_id = AsyncMock(return_value=None)
+    with patch("app.services.direct_upload_service.MEDIA_UPLOAD_INITIATE_LIMITER") as lim:
+        lim.hit = AsyncMock()
+        resp = await svc.initiate(
+            1,
+            actor_user_id=2,
+            body=DirectUploadInitiateRequest(
+                client_upload_id=client_id,
+                content_type="image/jpeg",
+                content_length=100,
+                order=2,
+            ),
+        )
+    media_repo.create.assert_not_awaited()
+    assert resp.media_id == 77

@@ -1,0 +1,60 @@
+{
+  "mapping_version": "gt-visual-mapping-v1",
+  "dataset_version": "aivai-private-seed-v1",
+  "taxonomy_version": "private-11-class-v1",
+  "frozen_before_calibration": true,
+  "purpose": "Map frozen human GT slugs to object-centric Visual Evidence concept families for offline calibration only. NOT runtime category assignment.",
+  "notes": [
+    "REAL_ESTATE GT may be interior or exterior; both visual concepts are acceptable primary targets.",
+    "COMMERCIAL_TRANSPORT GT is commercial van / light commercial; TRUCK acceptable when visually ambiguous heavy van vs light truck.",
+    "UNCLEAR excluded from primary accuracy denominator.",
+    "OTHER has zero support in v1."
+  ],
+  "slug_to_visual_family": {
+    "CAR_SALE": {
+      "primary": ["PASSENGER_CAR"],
+      "acceptable": ["COMMERCIAL_VAN"]
+    },
+    "AUTO_PARTS": {
+      "primary": ["AUTO_PART"],
+      "acceptable": []
+    },
+    "TRUCK_TRANSPORT": {
+      "primary": ["TRUCK"],
+      "acceptable": []
+    },
+    "SPECIAL_MACHINERY": {
+      "primary": ["SPECIAL_MACHINERY"],
+      "acceptable": []
+    },
+    "MOTORCYCLES": {
+      "primary": ["MOTORCYCLE"],
+      "acceptable": []
+    },
+    "WATER_TRANSPORT": {
+      "primary": ["WATERCRAFT"],
+      "acceptable": []
+    },
+    "BUSES": {
+      "primary": ["BUS"],
+      "acceptable": ["COMMERCIAL_VAN"]
+    },
+    "COMMERCIAL_TRANSPORT": {
+      "primary": ["COMMERCIAL_VAN"],
+      "acceptable": ["TRUCK"]
+    },
+    "REAL_ESTATE": {
+      "primary": ["REAL_ESTATE_INTERIOR", "REAL_ESTATE_EXTERIOR"],
+      "acceptable": []
+    },
+    "OTHER": {
+      "primary": [],
+      "acceptable": []
+    },
+    "UNCLEAR": {
+      "primary": [],
+      "acceptable": [],
+      "exclude_from_primary_denominator": true
+    }
+  }
+}

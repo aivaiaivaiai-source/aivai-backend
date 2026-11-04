@@ -59,6 +59,9 @@ services:
     command: python -m app.workers.media_worker
     env_file:
       - .env
+    volumes:
+      # Same shared storage as app — worker must read originals written by upload.
+      - ./media:/app/media
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-aivai}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aivai_secret}

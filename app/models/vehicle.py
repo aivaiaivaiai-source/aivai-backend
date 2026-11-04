@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.locale import DEFAULT_LOCALE
 from app.db.base_class import Base, TimestampMixin
-from app.models.category_enums import VehicleAliasTarget, VehicleType
+from app.models.category_enums import VehicleAliasTarget, VehicleExecution, VehicleType
 
 
 class VehicleBrand(Base, TimestampMixin):
@@ -64,6 +64,47 @@ class VehicleModel(Base, TimestampMixin):
         lazy="select",
         foreign_keys="VehicleAlias.model_id",
         passive_deletes=True,
+    )
+    allowed_executions: Mapped[list[VehicleModelAllowedExecution]] = relationship(
+        "VehicleModelAllowedExecution",
+        back_populates="model",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
+
+class VehicleModelAllowedExecution(Base, TimestampMixin):
+    """Which executions a catalog model may take (cargo / passenger)."""
+
+    __tablename__ = "vehicle_model_allowed_executions"
+    __table_args__ = (
+        UniqueConstraint(
+            "model_id",
+            "execution",
+            name="uq_vehicle_model_allowed_executions_model_exec",
+        ),
+        Index("ix_vehicle_model_allowed_executions_execution", "execution"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    model_id: Mapped[int] = mapped_column(
+        ForeignKey("vehicle_models.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    execution: Mapped[VehicleExecution] = mapped_column(
+        SQLEnum(
+            VehicleExecution,
+            name="vehicle_execution_enum",
+            create_type=False,
+        ),
+        nullable=False,
+    )
+
+    model: Mapped[VehicleModel] = relationship(
+        "VehicleModel",
+        back_populates="allowed_executions",
     )
 
 

@@ -9,10 +9,34 @@ from app.api.v1.endpoints import (
     category_intelligence,
     chats,
     favorites,
+    fx_rates,
     health,
+    listing_user_intent,
+    category_resolver,
+    listing_description_mode,
     listings,
     media,
+    media_classification,
+    visual_evidence,
     notifications,
+    accessories_catalog,
+    services_catalog,
+    jobs_catalog,
+    kids_catalog,
+    repair_catalog,
+    electronics_catalog,
+    beauty_catalog,
+    fashion_catalog,
+    food_catalog,
+    business_catalog,
+    med_catalog,
+    ready_business_catalog,
+    stationery_catalog,
+    animals_catalog,
+    sport_catalog,
+    materials_catalog,
+    parts_catalog,
+    tires_catalog,
     saved_searches,
     users,
     vehicles,
@@ -25,7 +49,33 @@ api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(chats.router, prefix="/chats", tags=["chats"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(fx_rates.router, prefix="/fx", tags=["fx"])
 api_router.include_router(listings.router, prefix="/listings", tags=["listings"])
+api_router.include_router(
+    media_classification.router,
+    prefix="/listings",
+    tags=["media-classification"],
+)
+api_router.include_router(
+    listing_user_intent.router,
+    prefix="/listings",
+    tags=["listing-user-intent"],
+)
+api_router.include_router(
+    category_resolver.router,
+    prefix="/listings",
+    tags=["category-resolver"],
+)
+api_router.include_router(
+    visual_evidence.router,
+    prefix="/listings",
+    tags=["visual-evidence"],
+)
+api_router.include_router(
+    listing_description_mode.router,
+    prefix="/listings",
+    tags=["listing-description-mode"],
+)
 api_router.include_router(favorites.router, prefix="/favorites", tags=["favorites"])
 api_router.include_router(
     media.listings_media_router,
@@ -38,6 +88,96 @@ api_router.include_router(
     tags=["media"],
 )
 api_router.include_router(categories.router, prefix="/categories", tags=["categories"])
+api_router.include_router(
+    parts_catalog.router,
+    prefix="/categories/parts",
+    tags=["parts-catalog"],
+)
+api_router.include_router(
+    tires_catalog.router,
+    prefix="/categories/tires",
+    tags=["tires-catalog"],
+)
+api_router.include_router(
+    accessories_catalog.router,
+    prefix="/categories/accessories",
+    tags=["accessories-catalog"],
+)
+api_router.include_router(
+    services_catalog.router,
+    prefix="/categories/services",
+    tags=["services-catalog"],
+)
+api_router.include_router(
+    jobs_catalog.router,
+    prefix="/categories/jobs",
+    tags=["jobs-catalog"],
+)
+api_router.include_router(
+    kids_catalog.router,
+    prefix="/categories/kids",
+    tags=["kids-catalog"],
+)
+api_router.include_router(
+    repair_catalog.router,
+    prefix="/categories/repair",
+    tags=["repair-catalog"],
+)
+api_router.include_router(
+    electronics_catalog.router,
+    prefix="/categories/electronics",
+    tags=["electronics-catalog"],
+)
+api_router.include_router(
+    beauty_catalog.router,
+    prefix="/categories/beauty",
+    tags=["beauty-catalog"],
+)
+api_router.include_router(
+    fashion_catalog.router,
+    prefix="/categories/fashion",
+    tags=["fashion-catalog"],
+)
+api_router.include_router(
+    food_catalog.router,
+    prefix="/categories/food",
+    tags=["food-catalog"],
+)
+api_router.include_router(
+    business_catalog.router,
+    prefix="/categories/business-equipment",
+    tags=["business-catalog"],
+)
+api_router.include_router(
+    med_catalog.router,
+    prefix="/categories/medical",
+    tags=["medical-catalog"],
+)
+api_router.include_router(
+    ready_business_catalog.router,
+    prefix="/categories/ready-business",
+    tags=["ready-business-catalog"],
+)
+api_router.include_router(
+    stationery_catalog.router,
+    prefix="/categories/stationery",
+    tags=["stationery-catalog"],
+)
+api_router.include_router(
+    animals_catalog.router,
+    prefix="/categories/animals",
+    tags=["animals-catalog"],
+)
+api_router.include_router(
+    sport_catalog.router,
+    prefix="/categories/sports-hobby",
+    tags=["sport-catalog"],
+)
+api_router.include_router(
+    materials_catalog.router,
+    prefix="/categories/materials",
+    tags=["materials-catalog"],
+)
 api_router.include_router(vehicles.router, prefix="/vehicles", tags=["vehicles"])
 api_router.include_router(
     category_intelligence.router,

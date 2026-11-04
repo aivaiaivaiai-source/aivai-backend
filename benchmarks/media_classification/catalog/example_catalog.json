@@ -1,0 +1,47 @@
+{
+  "catalog_version": "example-v1",
+  "categories": [
+    {
+      "id": 10,
+      "slug": "transport",
+      "name": "Транспорт",
+      "parent_id": null,
+      "is_active": true
+    },
+    {
+      "id": 101,
+      "slug": "transport-car-sale",
+      "name": "Продажа авто",
+      "parent_id": 10,
+      "is_active": true
+    },
+    {
+      "id": 102,
+      "slug": "transport-auto-parts",
+      "name": "Автозапчасти",
+      "parent_id": 10,
+      "is_active": true
+    },
+    {
+      "id": 103,
+      "slug": "transport-tires-wheels",
+      "name": "Шины и диски",
+      "parent_id": 10,
+      "is_active": true
+    },
+    {
+      "id": 20,
+      "slug": "electronics",
+      "name": "Электроника",
+      "parent_id": null,
+      "is_active": true
+    },
+    {
+      "id": 201,
+      "slug": "electronics-phones",
+      "name": "Телефоны",
+      "parent_id": 20,
+      "is_active": true
+    }
+  ]
+}

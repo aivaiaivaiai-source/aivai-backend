@@ -37,13 +37,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
         ("real-estate-rent", "Аренда", CategoryEntityType.object),
         ("real-estate-commercial", "Коммерческая", CategoryEntityType.object),
     ],
-    "transport": [
-        ("transport-cars", "Легковые автомобили", CategoryEntityType.object),
-        ("transport-parts", "Запчасти и аксессуары", CategoryEntityType.object),
-        ("transport-trucks", "Грузовики и спецтехника", CategoryEntityType.object),
-        ("transport-moto", "Мотоциклы", CategoryEntityType.object),
-        ("transport-water", "Водный транспорт", CategoryEntityType.object),
-    ],
+    # Transport L2 comes from mobile_category_skeleton (v2 canonical slugs).
+    # Legacy v1 slugs (transport-cars, …) are retired — see catalog_canonical_map_v1.json.
+    "transport": [],
     "jobs": [
         ("jobs-vacancies", "Вакансии", CategoryEntityType.job),
         ("jobs-resume", "Резюме", CategoryEntityType.job),
@@ -73,11 +69,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
         ("business-equipment-retail", "Торговое оборудование", CategoryEntityType.equipment),
         ("business-equipment-industrial", "Промышленное", CategoryEntityType.equipment),
     ],
-    "home-garden": [
-        ("home-furniture", "Мебель", CategoryEntityType.object),
-        ("home-decor", "Декор и текстиль", CategoryEntityType.object),
-        ("home-garden-plants", "Сад и растения", CategoryEntityType.object),
-    ],
+    # Home-garden L2 comes from mobile_category_skeleton.
+    # Legacy coarse L2 (home-furniture / home-decor / home-garden-plants) retired.
+    "home-garden": [],
     "kids": [
         ("kids-toys", "Игрушки", CategoryEntityType.object),
         ("kids-clothes", "Одежда для детей", CategoryEntityType.object),
@@ -137,46 +131,36 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
 _CORE = CategoryFieldType
 
 CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
-    # --- transport ---
-    "transport-cars": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("brand", "Марка", _CORE.brand, "Какая марка?"),
-        ("model", "Модель", _CORE.model, "Какая модель?"),
-        ("year", "Год", _CORE.year, "Какой год выпуска?"),
-        ("steering_side", "Руль", _CORE.enum, "Левый или правый руль?"),
-        ("price", "Цена", _CORE.price, "Какая цена?"),
-        ("condition", "Состояние", _CORE.enum, "Какое состояние?"),
-    ],
-    # Mobile create-listing section «Продажа авто» (v2 skeleton slug).
-    "transport-car-sale": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("brand", "Марка", _CORE.brand, "Какая марка?"),
-        ("model", "Модель", _CORE.model, "Какая модель?"),
-        ("year", "Год", _CORE.year, "Какой год выпуска?"),
-        ("steering_side", "Руль", _CORE.enum, "Левый или правый руль?"),
-        ("price", "Цена", _CORE.price, "Какая цена?"),
-        ("condition", "Состояние", _CORE.enum, "Какое состояние?"),
-    ],
-    "transport-parts": [
+    # --- transport (canonical mobile v2) ---
+    # transport-car-sale Create SoT: app.seeds.car_sale_v2 (loader overlay).
+    "transport-car-sale": [],
+    "transport-auto-parts": [
         ("city", "Город", _CORE.city, "В каком городе?"),
         ("part_type", "Тип запчасти", _CORE.string, "Что за запчасть?"),
         ("price", "Цена", _CORE.price, "Какая цена?"),
         ("condition", "Состояние", _CORE.enum, "Новая или б/у?"),
     ],
-    "transport-trucks": [
+    "transport-cargo": [
         ("city", "Город", _CORE.city, "В каком городе?"),
         ("brand", "Марка", _CORE.brand, "Какая марка?"),
         ("year", "Год", _CORE.year, "Год выпуска?"),
         ("price", "Цена", _CORE.price, "Какая цена?"),
         ("condition", "Состояние", _CORE.enum, "Состояние?"),
     ],
-    "transport-moto": [
+    "transport-special-equipment": [
+        ("city", "Город", _CORE.city, "В каком городе?"),
+        ("brand", "Марка", _CORE.brand, "Какая марка?"),
+        ("year", "Год", _CORE.year, "Год выпуска?"),
+        ("price", "Цена", _CORE.price, "Какая цена?"),
+        ("condition", "Состояние", _CORE.enum, "Состояние?"),
+    ],
+    "transport-moto-tech": [
         ("city", "Город", _CORE.city, "В каком городе?"),
         ("brand", "Марка", _CORE.brand, None),
         ("price", "Цена", _CORE.price, "Какая цена?"),
         ("condition", "Состояние", _CORE.enum, None),
     ],
-    "transport-water": [
+    "transport-watercraft": [
         ("city", "Город", _CORE.city, "В каком городе?"),
         ("item_type", "Тип", _CORE.string, "Лодка, катер, яхта?"),
         ("price", "Цена", _CORE.price, None),
@@ -309,23 +293,7 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
         ("item_type", "Оборудование", _CORE.string, "Станок, линия?"),
         ("price", "Цена", _CORE.price, None),
     ],
-    # --- home & garden ---
-    "home-furniture": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("item_type", "Мебель", _CORE.string, "Диван, шкаф, стол?"),
-        ("price", "Цена", _CORE.price, None),
-        ("condition", "Состояние", _CORE.enum, None),
-    ],
-    "home-decor": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("item_type", "Товар", _CORE.string, "Что продаёте?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
-    "home-garden-plants": [
-        ("city", "Город", _CORE.city, "Город или село?"),
-        ("item_type", "Растения", _CORE.string, "Что продаёте?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
+    # --- home & garden leaf fields: app.seeds.home_garden_filters (via loader) ---
     # --- kids ---
     "kids-toys": [
         ("city", "Город", _CORE.city, "В каком городе?"),
@@ -521,44 +489,8 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
 }
 
 OPTIONAL_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType]]] = {
-    "transport-cars": [
-        ("mileage", "Пробег", _CORE.number),
-        ("color", "Цвет", _CORE.string),
-        ("vin", "VIN", _CORE.string),
-        ("engine_volume", "Объём двигателя", _CORE.string),
-        ("transmission", "Коробка передач", _CORE.string),
-        ("drive", "Привод", _CORE.string),
-        ("fuel", "Топливо", _CORE.string),
-        ("registration_country", "Страна учёта", _CORE.string),
-        ("available_in_kg", "Наличие в КР", _CORE.string),
-        ("fresh_import", "Свежепригнан", _CORE.string),
-        ("customs_cleared_kg", "Растаможен в КР", _CORE.string),
-        ("taxes_paid", "Налог и штрафы", _CORE.string),
-        ("negotiable", "Возможность торга", _CORE.string),
-        ("exchange", "Возможность обмена", _CORE.string),
-        ("installment", "Возможность рассрочки", _CORE.string),
-        ("seller_type", "Кто продает", _CORE.string),
-        ("contact_methods", "Способы связи", _CORE.string),
-    ],
-    "transport-car-sale": [
-        ("mileage", "Пробег", _CORE.number),
-        ("color", "Цвет", _CORE.string),
-        ("vin", "VIN", _CORE.string),
-        ("engine_volume", "Объём двигателя", _CORE.string),
-        ("transmission", "Коробка передач", _CORE.string),
-        ("drive", "Привод", _CORE.string),
-        ("fuel", "Топливо", _CORE.string),
-        ("registration_country", "Страна учёта", _CORE.string),
-        ("available_in_kg", "Наличие в КР", _CORE.string),
-        ("fresh_import", "Свежепригнан", _CORE.string),
-        ("customs_cleared_kg", "Растаможен в КР", _CORE.string),
-        ("taxes_paid", "Налог и штрафы", _CORE.string),
-        ("negotiable", "Возможность торга", _CORE.string),
-        ("exchange", "Возможность обмена", _CORE.string),
-        ("installment", "Возможность рассрочки", _CORE.string),
-        ("seller_type", "Кто продает", _CORE.string),
-        ("contact_methods", "Способы связи", _CORE.string),
-    ],
+    # Optional EAV for car-sale retired — V2 core schema in car_sale_v2.
+    "transport-car-sale": [],
     "real-estate-sale": [
         ("area", "Площадь", _CORE.decimal),
         ("floor", "Этаж", _CORE.number),
@@ -591,11 +523,41 @@ OPTIONAL_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType]]] = {
 }
 
 CATEGORY_ALIASES: dict[str, list[str]] = {
-    # transport
-    "transport-cars": ["авто", "машина", "легковушка", "car", "автомобиль", "седан"],
-    "transport-parts": ["запчасти", "шины", "диски", "аккумулятор", "бампер", "фара"],
-    "transport-trucks": ["грузовик", "камаз", "газель", "фура", "спецтехника"],
-    "transport-moto": ["мото", "мотоцикл", "скутер", "байк"],
+    # transport (canonical mobile v2)
+    "transport-car-sale": ["авто", "машина", "легковушка", "car", "автомобиль", "седан"],
+    "transport-auto-parts": ["запчасти", "аккумулятор", "бампер"],
+    "transport-auto-parts-optika-fary-i-fonari": ["фара", "оптика", "фонарь", "штатная фара"],
+    "transport-accessories-tuning-multimedia": ["магнитола", "головное устройство"],
+    "transport-accessories-tuning-avtozvuk": ["автозвук", "сабвуфер"],
+    "transport-accessories-tuning-svet-i-dopolnitelnoe-osveschenie": [
+        "led балка",
+        "дополнительный свет",
+    ],
+    "transport-accessories-tuning-aksessuary-salona": [
+        "коврики для машины",
+        "автоковрики",
+        "чехлы",
+    ],
+    "transport-accessories-tuning-signalizatsii-i-protivougonnye": ["сигнализация"],
+    "transport-accessories-tuning-bagazhniki-i-perevozka": ["фаркоп", "багажник на крышу"],
+    "transport-accessories-tuning-tehnicheskiy-tyuning": [
+        "прямоток",
+        "койловеры",
+        "комплект гбо",
+    ],
+    "transport-accessories-tuning-plenki-i-materialy": [
+        "тонировочная пленка",
+        "шумоизоляционный материал",
+    ],
+    "transport-tires-wheels": ["шины", "диски"],
+    "transport-cargo": ["грузовик", "камаз", "газель", "фура"],
+    # Bus V2: leaf aliases (not parent 1201).
+    "transport-commercial-avtobusy": ["автобус"],
+    "transport-commercial-mikroavtobusy": ["микроавтобус"],
+    "transport-buses-avtodoma": ["автодом"],
+    "transport-special-equipment": ["спецтехника"],
+    "transport-moto-tech": ["мото", "мотоцикл", "скутер", "байк"],
+    "transport-bicycles": ["велосипед", "велик", "велосипеды"],
     # real estate
     "real-estate-sale": ["квартира", "дом", "недвижимость", "участок", "продам квартиру"],
     "real-estate-rent": ["аренда", "сдам", "снять квартиру", "арендую"],
@@ -607,7 +569,7 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "services-transport": [
         "перевозка",
         "доставка",
-        "эвакуатор",
+        # bare «эвакуатор» → Auto Services towing (Auto Services V2)
         "грузоперевозки",
         "привезти",
         "щебень",
@@ -639,10 +601,83 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "business-equipment-cafe": ["кофемашина", "кофемолка", "барное", "кухонное оборудование"],
     "business-equipment-retail": ["витрина", "касса", "холодильник торговый"],
     "business-equipment-industrial": ["станок", "пресс", "конвейер"],
-    # home
-    "home-furniture": ["диван", "шкаф", "кровать", "стол", "мебель"],
-    "home-decor": ["шторы", "ковер", "люстра", "декор"],
-    "home-garden-plants": ["растения", "саженцы", "газон"],
+    # home — broad L2 aliases; leaf-specific remaps in HOME_GARDEN_FINAL_ALIAS_REMAP
+    "home-garden-mebel-dlya-doma": [
+        "диван",
+        "шкаф",
+        "кровать",
+        "стол",
+        "мебель",
+        "кухня",
+        "барная стойка",
+        "основание кровати",
+        "садовая мебель",
+    ],
+    "home-garden-mebel-dlya-doma-matrasy": ["матрас", "ортопедический матрас", "матрасы"],
+    "home-garden-mebel-dlya-doma-mebelnye-garnitury-kuhonnye-garnitury": [
+        "кухонный гарнитур",
+        "кухонные гарнитуры",
+    ],
+    "home-garden-mebel-dlya-doma-komplekty-mebeli-stol-i-stulya": [
+        "стол и стулья",
+        "стол со стульями",
+    ],
+    "home-garden-tekstil-i-kovry": ["ковер", "коврик", "ковры"],
+    "home-garden-postelnoe-bele-i-pledy": [
+        "товары для сна",
+        "постельное белье",
+        "пододеяльник",
+        "плед",
+        "подушка",
+        "одеяло",
+        "наматрасник",
+    ],
+    "home-garden-shtory-zhalyuzi-i-karnizy": ["шторы", "жалюзи", "карниз"],
+    "home-garden-posuda-kuhonnye-prinadlezhnosti": ["посуда", "сковорода", "кастрюля"],
+    "home-garden-bytovaya-himiya-i-hoz-tovary": ["бытовая химия", "моющее средство", "хозтовары"],
+    "home-garden-tovary-dlya-vannoy": ["аксессуары для ванной", "диспенсер", "коврик для ванной"],
+    "home-garden-hranenie-i-organizatsiya": ["органайзер", "коробка для хранения", "вешалка"],
+    "home-garden-dekor-i-interer": [
+        "декор",
+        "ваза",
+        "фоторамка",
+        "интерьер",
+        "садовый декор",
+        "садовая фигура",
+        "новогодний декор",
+        "ёлка искусственная",
+        "гирлянда",
+    ],
+    "home-garden-zerkala": ["зеркало", "зеркало настенное"],
+    "home-garden-komnatnye-rasteniya-i-tsvety": ["растения", "комнатные растения", "цветы"],
+    "home-garden-iskusstvennye-tsvety-i-rasteniya": ["искусственные цветы", "искусственные растения"],
+    "home-garden-sazhentsy-i-rassada": ["саженцы", "рассада"],
+    "home-garden-semena-i-posadochnyy-material": ["семена", "газон", "посадочный материал"],
+    "home-garden-gorshki-kashpo-i-grunty": ["горшок", "кашпо", "грунт", "почвосмесь"],
+    "home-garden-udobreniya-dlya-rasteniy": ["удобрение", "подкормка"],
+    "home-garden-sredstva-zaschity-rasteniy": ["пестицид", "защита растений"],
+    "home-garden-teplitsy-i-parniki": ["теплица", "парник"],
+    "home-garden-poliv-i-oroshenie": ["полив", "шланг", "капельный полив"],
+    "home-garden-sadovyy-inventar": ["лопата", "грабли", "секатор"],
+    "home-garden-sadovaya-tehnika": ["газонокосилка", "триммер", "садовая техника"],
+    "home-garden-besedki-navesy-i-tovary-dlya-dachi": ["беседка", "навес", "дачи"],
+    "home-garden-mangaly-barbekyu-tandyr-grili": ["мангал", "барбекю", "тандыр", "гриль"],
+    "home-garden-basseyny-i-tovary-dlya-otdyha": [
+        "бассейн",
+        "надувной бассейн",
+        "бассейны и аксессуары",
+        "фильтр для бассейна",
+    ],
+    "home-garden-sadovye-kacheli-i-gamaki": [
+        "качели",
+        "садовые качели",
+        "гамак",
+        "гамаки",
+    ],
+    "home-garden-tovary-dlya-bani-i-sauny": ["баня", "сауна", "веник"],
+    "home-garden-kaminy-pechi-i-aksessuary": ["камин", "печь", "каминный набор"],
+    "home-garden-prochee-dlya-doma-i-sada": ["дом и сад", "для дома"],
+    "repair-construction-elektrika-i-osveschenie": ["люстра", "бра", "торшер", "лампа", "освещение", "электрика"],
     # kids
     "kids-toys": ["игрушки", "конструктор", "кукла"],
     "kids-clothes": ["детская одежда", "комбинезон детский"],
@@ -663,7 +698,7 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "fashion-shoes": ["кроссовки", "ботинки", "обувь", "туфли"],
     "fashion-accessories": ["сумка", "часы", "ремень", "очки"],
     # sports
-    "sports-equipment": ["велосипед", "лыжи", "мяч", "гантели"],
+    "sports-equipment": ["лыжи", "мяч", "гантели", "гантель", "тренажёр"],
     "sports-tourism": ["палатка", "спальник", "рюкзак туристический"],
     "sports-music": ["гитара", "пианино", "синтезатор"],
     # books
@@ -698,8 +733,8 @@ ROUTING_RULES: list[tuple[str, str, str, dict]] = [
     (
         "kamaz_sale",
         r"прода.*камаз|камаз.*прода",
-        "KAMAZ sale → transport-trucks",
-        {"target_category_slug": "transport-trucks"},
+        "KAMAZ sale → transport-cargo",
+        {"target_category_slug": "transport-cargo"},
     ),
     (
         "sell_cow",
@@ -856,11 +891,8 @@ MODERATION_RULES: list[tuple[str, str, str, ModerationAction, dict | None]] = [
 ]
 
 SEARCH_FILTERS: dict[str, list[tuple[str, str, CategoryFilterType]]] = {
-    "transport-cars": [
-        ("year", "Год", CategoryFilterType.range),
-        ("price", "Цена", CategoryFilterType.range),
-        ("brand", "Марка", CategoryFilterType.select),
-    ],
+    # Search SoT for car-sale: app.seeds.car_sale_v2 (loader overlay).
+    "transport-car-sale": [],
     "real-estate-sale": [
         ("price", "Цена", CategoryFilterType.range),
         ("rooms", "Комнаты", CategoryFilterType.range),
@@ -903,9 +935,13 @@ AI_DIALOGUE_HINTS: dict[str, str] = {
 
 
 def all_category_slugs() -> set[str]:
+    from app.seeds.transport_canonical import TRANSPORT_CANONICAL_SLUGS
+
     slugs = {r[0] for r in ROOT_CATEGORIES}
     for subs in SUBCATEGORIES.values():
         slugs.update(s[0] for s in subs)
+    slugs.update(TRANSPORT_CANONICAL_SLUGS)
+    slugs.update(CORE_FIELDS.keys())
     return slugs
 
 

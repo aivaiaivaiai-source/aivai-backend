@@ -1,0 +1,19 @@
+{
+  "prompt_set_version": "visual-evidence-prompts-v1",
+  "model_id": "google/siglip2-base-patch16-224",
+  "input_size": 224,
+  "concepts": {
+    "PASSENGER_CAR": "a passenger car or SUV visible in the image",
+    "AUTO_PART": "a car part, engine component, or automotive spare part visible in the image",
+    "TRUCK": "a truck or heavy road freight vehicle visible in the image",
+    "SPECIAL_MACHINERY": "special machinery such as an excavator, loader, crane, or construction equipment visible in the image",
+    "MOTORCYCLE": "a motorcycle or scooter visible in the image",
+    "WATERCRAFT": "a boat, jet ski, or other watercraft visible in the image",
+    "BUS": "a bus or minibus visible in the image",
+    "COMMERCIAL_VAN": "a commercial van or delivery van visible in the image",
+    "REAL_ESTATE_INTERIOR": "an interior room of a home or apartment visible in the image",
+    "REAL_ESTATE_EXTERIOR": "the exterior of a house, building, or property visible in the image",
+    "PERSON": "a person or human figure prominently visible in the image",
+    "UNKNOWN_VISUAL": "an unclear or unrecognizable scene with no dominant object"
+  }
+}

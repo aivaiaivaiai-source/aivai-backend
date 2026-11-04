@@ -13,11 +13,21 @@ from app.models.category_field import CategoryCoreField, CategoryOptionalField  
 from app.models.category_filter import CategoryFilter  # noqa: F401
 from app.models.category_rule import CategoryRule  # noqa: F401
 from app.models.chat import Chat  # noqa: F401
-from app.models.vehicle import VehicleAlias, VehicleBrand, VehicleModel  # noqa: F401
+from app.models.vehicle import (  # noqa: F401
+    VehicleAlias,
+    VehicleBrand,
+    VehicleModel,
+    VehicleModelAllowedExecution,
+)
 from app.models.favorite import Favorite  # noqa: F401
 from app.models.listing import Listing  # noqa: F401
 from app.models.media import Media  # noqa: F401
 from app.models.media_job import MediaJob  # noqa: F401
+from app.models.media_classification import MediaClassification  # noqa: F401
+from app.models.listing_category_resolver import ListingCategoryResolverResult  # noqa: F401
+from app.models.listing_category_resolver_feedback import ListingCategoryResolverFeedback  # noqa: F401
+from app.models.listing_user_intent import ListingUserIntent  # noqa: F401
+from app.models.listing_visual_evidence import ListingVisualEvidence  # noqa: F401
 from app.models.media_outbox import MediaOutbox  # noqa: F401
 from app.models.media_storage_cleanup import MediaStorageCleanup  # noqa: F401
 from app.models.message import Message  # noqa: F401

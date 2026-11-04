@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.deps import get_category_intelligence_service
 from app.schemas.category_intelligence import (
@@ -46,9 +46,21 @@ async def resolve_vehicle(
 @router.get("/{category_id}", response_model=CategoryIntelligenceRead)
 async def get_category_intelligence(
     category_id: int,
+    intent: str | None = Query(
+        default=None,
+        description="Jobs V2 create intent: hiring | job_seeking. Ignored for other L1s.",
+    ),
+    deal_type: str | None = Query(
+        default=None,
+        description="Real Estate deal type for default_currency (sale vs rent).",
+    ),
     service: CategoryIntelligenceService = Depends(get_category_intelligence_service),
 ) -> CategoryIntelligenceRead:
-    row = await service.get_category_intelligence(category_id)
+    row = await service.get_category_intelligence(
+        category_id,
+        create_intent=intent,
+        deal_type=deal_type,
+    )
     if row is None:
         raise HTTPException(status_code=404, detail="Category not found")
     return row

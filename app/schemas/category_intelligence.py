@@ -30,6 +30,7 @@ class CategoryFilterRead(BaseModel):
     filter_type: str
     sort_order: int
     config: dict | None = None
+    search_intent: str = ""
 
 
 class CategoryRuleRead(BaseModel):
@@ -55,6 +56,10 @@ class CategoryIntelligenceRead(BaseModel):
     description: str | None = None
     requires_city: bool = True
     ai_dialogue_hint: str | None = None
+    # Echo of Jobs V2 create intent when requested; null for other L1s.
+    create_intent: str | None = None
+    # Currency V2: PriceDialog / Search filter initial currency (KGS|USD).
+    default_currency: str = "KGS"
     core_fields: list[CategoryFieldRead] = Field(default_factory=list)
     optional_fields: list[CategoryFieldRead] = Field(default_factory=list)
     filters: list[CategoryFilterRead] = Field(default_factory=list)
@@ -96,3 +101,8 @@ class VehicleResolveResult(BaseModel):
     model_id: int | None = None
     model_name: str | None = None
     matched_alias: str | None = None
+    # Execution foundation: never guess when dual-capable without a signal.
+    vehicle_execution: str | None = None
+    execution_resolved: bool = False
+    suggested_placement_slug: str | None = None
+    requires_execution_choice: bool = False

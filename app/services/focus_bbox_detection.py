@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 VEHICLE_LABELS = frozenset({"car", "truck", "bus", "motorcycle"})
-CAR_SALE_CATEGORY_SLUGS = frozenset({"transport-car-sale", "transport-cars"})
+CAR_SALE_CATEGORY_SLUGS = frozenset({"transport-car-sale"})
 
 MIN_PRIMARY_CONF = 0.35
 MIN_ANY_VEHICLE_CONF = 0.25

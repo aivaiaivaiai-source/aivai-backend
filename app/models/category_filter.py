@@ -19,7 +19,12 @@ class CategoryFilter(Base, TimestampMixin):
 
     __tablename__ = "category_filters"
     __table_args__ = (
-        UniqueConstraint("category_id", "filter_key", name="uq_category_filters_key"),
+        UniqueConstraint(
+            "category_id",
+            "filter_key",
+            "search_intent",
+            name="uq_category_filters_key_intent",
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -38,6 +43,14 @@ class CategoryFilter(Base, TimestampMixin):
     config: Mapped[dict | None] = mapped_column(
         JSON().with_variant(JSONB, "postgresql"),
         nullable=True,
+    )
+    # '' = shared / non-Jobs. Jobs Search V2: 'hiring' | 'job_seeking'.
+    search_intent: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="",
+        server_default="",
+        index=True,
     )
 
     category: Mapped[Category] = relationship("Category", back_populates="filters")

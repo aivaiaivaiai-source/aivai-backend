@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aivai.media_classification.manifest.v1",
+  "title": "AiVai Media Classification Benchmark Manifest Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["test_id", "images", "ground_truth"],
+  "properties": {
+    "test_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique listing-level case id"
+    },
+    "images": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 9,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Paths relative to images root, ordered cover-first"
+    },
+    "ground_truth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category_slug"],
+      "properties": {
+        "category_id": { "type": ["integer", "null"], "minimum": 1 },
+        "category_slug": { "type": "string", "minLength": 1 },
+        "path": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Human hierarchy labels, e.g. [Транспорт, Продажа авто]"
+        }
+      }
+    },
+    "acceptable_alternatives": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category_slug"],
+        "properties": {
+          "category_id": { "type": ["integer", "null"], "minimum": 1 },
+          "category_slug": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["easy", "medium", "hard", "ambiguous"],
+      "default": "medium"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "notes": { "type": "string", "default": "" },
+    "split": {
+      "type": "string",
+      "enum": ["train", "validation", "test"],
+      "default": "test"
+    },
+    "source_group_id": {
+      "type": ["string", "null"],
+      "description": "Leakage grouping for near-duplicates / same seller"
+    }
+  }
+}

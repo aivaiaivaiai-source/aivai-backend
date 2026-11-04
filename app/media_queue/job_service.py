@@ -55,9 +55,12 @@ class MediaJobService:
         media_id: int,
         *,
         pipeline_version: str,
+        category_id: int | None = None,
     ) -> MediaJob:
         """Create job + outbox in current transaction (caller commits)."""
-        key = build_media_job_idempotency_key(media_id, pipeline_version)
+        key = build_media_job_idempotency_key(
+            media_id, pipeline_version, category_id=category_id
+        )
         existing = await self._jobs.get_by_idempotency_key(key)
         if existing is not None:
             return existing

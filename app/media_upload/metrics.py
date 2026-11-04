@@ -15,4 +15,4 @@ def incr(name: str, amount: int = 1) -> None:
 
 def snapshot() -> dict[str, int]:
     with _lock:
-        return dict(__counters)
+        return dict(_counters)

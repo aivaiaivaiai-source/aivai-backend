@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -16,6 +16,19 @@ class CategoryRepository(BaseRepository[Category]):
         stmt = select(Category).where(Category.slug == slug)
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def has_active_children(self, category_id: int) -> bool:
+        """True when category is a picker parent (active children exist)."""
+        stmt = (
+            select(func.count())
+            .select_from(Category)
+            .where(
+                Category.parent_id == category_id,
+                Category.is_active.is_(True),
+            )
+        )
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one() or 0) > 0
 
     async def get_root_categories(self, *, active_only: bool = True) -> list[Category]:
         stmt = select(Category).where(Category.parent_id.is_(None))

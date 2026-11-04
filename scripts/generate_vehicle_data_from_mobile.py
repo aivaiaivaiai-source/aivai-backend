@@ -14,7 +14,7 @@ VEHICLE_DATA = ROOT / "app" / "seeds" / "vehicle_data.py"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from app.services.category_text import slugify  # noqa: E402
+from app.services.category_text import slugify, transliterate_to_latin  # noqa: E402
 
 
 def parse_string_list(text: str, const_name: str) -> list[str]:
@@ -56,11 +56,12 @@ def load_legacy_brand_slugs() -> dict[str, str]:
 
 
 def stable_brand_slug(name: str, legacy_slugs: dict[str, str]) -> str:
-    return legacy_slugs.get(name.lower()) or legacy_slugs.get(slugify(name)) or slugify(name)
+    latin = slugify(transliterate_to_latin(name))
+    return legacy_slugs.get(name.lower()) or legacy_slugs.get(slugify(name)) or latin
 
 
 def unique_model_slug(name: str, seen: set[str]) -> str:
-    base = slugify(name)
+    base = slugify(transliterate_to_latin(name))
     slug = base
     suffix = 2
     while slug in seen:

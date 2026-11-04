@@ -24,7 +24,10 @@ def test_idempotency_key_includes_pipeline_version() -> None:
     k1 = build_media_job_idempotency_key(5, "v1")
     k2 = build_media_job_idempotency_key(5, "v2")
     assert k1 != k2
-    assert k1 == "media:5:pipeline:v1"
+    assert k1 == "media:5:pipeline:v1:cat:0"
+    k3 = build_media_job_idempotency_key(5, "v1", category_id=42)
+    assert k3 == "media:5:pipeline:v1:cat:42"
+    assert k3 != k1
 
 
 def test_namespace_isolated_from_ai_agents() -> None:

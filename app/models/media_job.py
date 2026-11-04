@@ -62,6 +62,13 @@ class MediaJob(Base, TimestampMixin):
     media = relationship("Media", back_populates="jobs")
 
 
-def build_media_job_idempotency_key(media_id: int, pipeline_version: str) -> str:
+def build_media_job_idempotency_key(
+    media_id: int,
+    pipeline_version: str,
+    *,
+    category_id: int | None = None,
+) -> str:
+    """Include category context so category change can enqueue a new job without bumping global pipeline version."""
     version = pipeline_version.strip() or "legacy"
-    return f"media:{media_id}:pipeline:{version}"
+    cat = int(category_id) if category_id is not None else 0
+    return f"media:{media_id}:pipeline:{version}:cat:{cat}"

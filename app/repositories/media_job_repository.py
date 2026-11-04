@@ -19,6 +19,15 @@ class MediaJobRepository(BaseRepository[MediaJob]):
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def list_for_media(self, media_id: int) -> list[MediaJob]:
+        stmt = (
+            select(MediaJob)
+            .where(MediaJob.media_id == media_id)
+            .order_by(MediaJob.id)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_by_id_for_update(self, job_id: int) -> MediaJob | None:
         stmt = (
             select(MediaJob)

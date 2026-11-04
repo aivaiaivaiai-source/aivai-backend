@@ -67,6 +67,19 @@ async def media_worker_loop(*, stop_event: asyncio.Event) -> None:
                 )
                 await cleanup.expire_abandoned_uploads()
                 await cleanup.process_pending()
+                if settings.MEDIA_AI_CLASSIFICATION_ENABLED:
+                    from app.services.media_classification_service import (
+                        MediaClassificationService,
+                    )
+
+                    clf = MediaClassificationService(session, settings)
+                    await clf.process_available(limit=2, worker_id=worker_id)
+                if settings.MEDIA_VISUAL_EVIDENCE_ENABLED:
+                    from app.services.visual_evidence_service import VisualEvidenceService
+
+                    ve = VisualEvidenceService(session, settings)
+                    await ve.process_available(limit=2, worker_id=worker_id)
+                await session.commit()
                 depth = await stream_length(client, settings)
                 metrics.set_gauge("queue_depth", depth)
 

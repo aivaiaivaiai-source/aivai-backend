@@ -7,6 +7,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+# UniqueConstraint still used by CategoryOptionalField.
+
 from app.db.base_class import Base, TimestampMixin
 from app.models.category_enums import CategoryFieldType
 
@@ -31,17 +33,25 @@ class _CategoryFieldMixin:
 
 
 class CategoryCoreField(Base, TimestampMixin, _CategoryFieldMixin):
-    """Fields AI must collect in dialogue (only if missing from user text)."""
+    """Fields AI must collect in dialogue (only if missing from user text).
+
+    ``create_intent`` scopes Jobs V2 create schemas:
+    NULL = default / non-jobs; ``hiring`` / ``job_seeking`` for Работа sectors.
+    Unique identity is (category_id, field_key, coalesce(create_intent, '')).
+    """
 
     __tablename__ = "category_core_fields"
-    __table_args__ = (
-        UniqueConstraint("category_id", "field_key", name="uq_category_core_fields_key"),
-    )
+    # Uniqueness: ix_category_core_fields_cat_key_intent (migration o3p4q5r6s7t8)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     category_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+    )
+    create_intent: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
         index=True,
     )
 

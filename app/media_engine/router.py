@@ -15,6 +15,9 @@ class MediaPipelineKind(str, enum.Enum):
 
 def route_pipeline(category_slug: str | None) -> MediaPipelineKind:
     slug = (category_slug or "").strip().lower()
+    if not slug:
+        # Unknown category must never enter AUTO (car) route.
+        return MediaPipelineKind.GENERAL
     if slug in CAR_SALE_CATEGORY_SLUGS:
         return MediaPipelineKind.AUTO
     return MediaPipelineKind.GENERAL

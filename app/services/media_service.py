@@ -285,6 +285,7 @@ class MediaService:
                     if (
                         refreshed is not None
                         and self._focus_bbox_service is not None
+                        and listing.category_id is not None
                     ):
                         await self._focus_bbox_service.maybe_detect_and_persist(
                             listing=listing,
@@ -294,12 +295,18 @@ class MediaService:
                         )
                         refreshed = await self._media.get_by_id(created.id) or refreshed
 
-                if refreshed is not None and async_enabled and lifecycle == MediaLifecycleStatus.queued:
+                if (
+                    refreshed is not None
+                    and async_enabled
+                    and lifecycle == MediaLifecycleStatus.queued
+                    and listing.category_id is not None
+                ):
                     from app.media_queue.job_service import MediaJobService
 
                     await MediaJobService(self._session, settings).enqueue_for_media(
                         refreshed.id,
                         pipeline_version=settings.MEDIA_ASYNC_PIPELINE_VERSION,
+                        category_id=listing.category_id,
                     )
 
                 if refreshed is not None:
@@ -307,7 +314,7 @@ class MediaService:
 
             await self._session.commit()
 
-            if async_enabled:
+            if async_enabled and listing.category_id is not None:
                 await self._best_effort_dispatch_outbox(settings)
 
             return [MediaRead.model_validate(m) for m in created_rows]

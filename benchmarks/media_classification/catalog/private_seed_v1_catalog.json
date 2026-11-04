@@ -1,0 +1,94 @@
+{
+  "catalog_version": "aivai-private-seed-v1-taxonomy",
+  "notes": "BENCHMARK-PRIVATE TAXONOMY ONLY — not production AiVai catalog",
+  "categories": [
+    {
+      "id": 910001,
+      "slug": "CAR_SALE",
+      "name": "Продажа авто",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910002,
+      "slug": "AUTO_PARTS",
+      "name": "Автозапчасти",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910003,
+      "slug": "TRUCK_TRANSPORT",
+      "name": "Грузовой транспорт",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910004,
+      "slug": "SPECIAL_MACHINERY",
+      "name": "Спецтехника",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910005,
+      "slug": "MOTORCYCLES",
+      "name": "Мототехника",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910006,
+      "slug": "WATER_TRANSPORT",
+      "name": "Водный транспорт",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910007,
+      "slug": "BUSES",
+      "name": "Автобусы",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910008,
+      "slug": "COMMERCIAL_TRANSPORT",
+      "name": "Коммерческий транспорт",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910009,
+      "slug": "REAL_ESTATE",
+      "name": "Недвижимость",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910010,
+      "slug": "OTHER",
+      "name": "Другое",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    },
+    {
+      "id": 910011,
+      "slug": "UNCLEAR",
+      "name": "Непонятно",
+      "parent_id": null,
+      "is_active": true,
+      "production": false
+    }
+  ]
+}

@@ -20,6 +20,7 @@ from app.repositories.chat_repository import ChatRepository
 from app.repositories.ai_agent_repository import AiAgentRepository
 from app.repositories.ai_search_task_repository import AiSearchTaskRepository
 from app.repositories.category_repository import CategoryRepository
+from app.repositories.category_alias_repository import CategoryAliasRepository
 from app.repositories.category_moderation_rule_repository import CategoryModerationRuleRepository
 from app.repositories.category_routing_rule_repository import CategoryRoutingRuleRepository
 from app.repositories.vehicle_repository import (
@@ -31,6 +32,7 @@ from app.repositories.favorite_repository import FavoriteRepository
 from app.repositories.health_repository import HealthRepository
 from app.repositories.listing_field_value_repository import ListingFieldValueRepository
 from app.repositories.listing_repository import ListingRepository
+from app.repositories.listing_user_intent_repository import ListingUserIntentRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.media_repository import MediaRepository
 from app.repositories.notification_repository import NotificationRepository
@@ -40,6 +42,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserRead
 from app.services.ai_agent_service import AiAgentService
 from app.services.ai_search_service import AiSearchService
+from app.services.assistant_conversation_service import AssistantConversationService
 from app.services.assistant_service import AssistantService, build_assistant_conversation_service
 from app.services.assistant_voice_service import AssistantVoiceService
 from app.services.text_to_speech_service import OpenAITTSService, TextToSpeechService
@@ -52,6 +55,9 @@ from app.services.favorite_service import FavoriteService
 from app.services.health_service import HealthService
 from app.services.listing_field_value_service import ListingFieldValueService
 from app.services.listing_service import ListingService
+from app.services.listing_description_mode_service import ListingDescriptionModeService
+from app.services.category_resolver_service import CategoryResolverService
+from app.services.listing_user_intent_service import ListingUserIntentService
 from app.services.image_moderation_pipeline import build_image_moderation_pipeline
 from app.services.direct_upload_service import DirectUploadService
 from app.services.focus_bbox_detector import (
@@ -208,6 +214,28 @@ def get_listing_service(
         ),
         ai_search_service=ai_search,
     )
+
+
+def get_listing_user_intent_service(
+    session: AsyncSession = Depends(get_db),
+) -> ListingUserIntentService:
+    return ListingUserIntentService(
+        session,
+        ListingRepository(session),
+        ListingUserIntentRepository(session),
+    )
+
+
+def get_category_resolver_service(
+    session: AsyncSession = Depends(get_db),
+) -> CategoryResolverService:
+    return CategoryResolverService(session)
+
+
+def get_listing_description_mode_service(
+    session: AsyncSession = Depends(get_db),
+) -> ListingDescriptionModeService:
+    return ListingDescriptionModeService(session)
 
 
 def get_favorite_service(

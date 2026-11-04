@@ -37,7 +37,7 @@ def _find_car_listing(token: str) -> int:
         items = json.loads(resp.read()).get("items") or []
     for item in items:
         slug = (item.get("category") or {}).get("slug")
-        if slug in ("transport-car-sale", "transport-cars"):
+        if slug == "transport-car-sale":
             return int(item["id"])
     if not items:
         raise RuntimeError("No listings found for dev user")

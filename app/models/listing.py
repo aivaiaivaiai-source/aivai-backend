@@ -9,6 +9,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base_class import Base, TimestampMixin
 from app.models.enums import Currency, ListingStatus
+from app.models.listing_description_mode_enums import ListingDescriptionMode
+from app.models.category_selection_enums import CategorySelectionSource
+from app.models.category_enums import VehicleExecution
 
 if TYPE_CHECKING:
     from app.models.category import Category
@@ -29,6 +32,17 @@ class Listing(Base, TimestampMixin):
         SQLEnum(Currency, name="currency_enum"),
         nullable=False,
     )
+    # Currency V2: publication/repricing FX snapshot (USD→KGS). Not client-owned.
+    exchange_rate_snapshot: Mapped[Decimal | None] = mapped_column(
+        Numeric(18, 6),
+        nullable=True,
+    )
+    # Currency V2: Search/Sort normalized amount in KGS. Backend-owned.
+    normalized_price_kgs: Mapped[Decimal | None] = mapped_column(
+        Numeric(14, 2),
+        nullable=True,
+        index=True,
+    )
     status: Mapped[ListingStatus] = mapped_column(
         SQLEnum(ListingStatus, name="listing_status_enum"),
         nullable=False,
@@ -41,9 +55,15 @@ class Listing(Base, TimestampMixin):
         nullable=True,
         index=True,
     )
-    category_id: Mapped[int] = mapped_column(
+    # Null allowed for draft until category is confirmed (Media Classification).
+    category_id: Mapped[int | None] = mapped_column(
         ForeignKey("categories.id", ondelete="RESTRICT"),
+        nullable=True,
         index=True,
+    )
+    category_selection_source: Mapped[CategorySelectionSource | None] = mapped_column(
+        SQLEnum(CategorySelectionSource, name="category_selection_source_enum"),
+        nullable=True,
     )
     uses_placeholder_image: Mapped[bool] = mapped_column(
         Boolean,
@@ -75,13 +95,31 @@ class Listing(Base, TimestampMixin):
         nullable=True,
         index=True,
     )
+    description_mode: Mapped[ListingDescriptionMode | None] = mapped_column(
+        SQLEnum(ListingDescriptionMode, name="listing_description_mode_enum"),
+        nullable=True,
+    )
+    vehicle_execution: Mapped[VehicleExecution | None] = mapped_column(
+        SQLEnum(VehicleExecution, name="vehicle_execution_enum", create_type=False),
+        nullable=True,
+        index=True,
+    )
+    # Jobs V2: stable create intent (hiring | job_seeking). Null = legacy / non-jobs.
+    job_intent: Mapped[str | None] = mapped_column(
+        String(32),
+        nullable=True,
+        index=True,
+    )
 
     owner: Mapped[User | None] = relationship(
         "User",
         back_populates="listings",
         foreign_keys=[owner_id],
     )
-    category: Mapped[Category] = relationship("Category", back_populates="listings")
+    category: Mapped[Category | None] = relationship(
+        "Category",
+        back_populates="listings",
+    )
     images: Mapped[list[Media]] = relationship(
         "Media",
         back_populates="listing",

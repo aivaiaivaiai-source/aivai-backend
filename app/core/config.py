@@ -56,6 +56,9 @@ class Settings(BaseSettings):
 
     CATEGORY_SNAPSHOT_TTL_SECONDS: int = 60
 
+    # Currency V2: header key for PUT /fx/usd-kgs (empty disables mutation).
+    FX_RATE_ADMIN_KEY: str = "aivai-fx-dev"
+
     FOCUS_BBOX_ENABLED: bool = True
     FOCUS_BBOX_MODEL_ID: str = "PekingU/rtdetr_r18vd_coco_o365"
     FOCUS_BBOX_MIN_CONFIDENCE: float = 0.35
@@ -95,6 +98,33 @@ class Settings(BaseSettings):
     MEDIA_ENGINE_DISPLAY_LONG_EDGE: int = 1600
     MEDIA_ENGINE_FEED_LONG_EDGE: int = 800
     MEDIA_ENGINE_THUMB_LONG_EDGE: int = 320
+
+    # --- Media AI Classification (Stage 6C Substage 2) — default OFF ---
+    MEDIA_AI_CLASSIFICATION_ENABLED: bool = False
+    MEDIA_CLASSIFIER_VERSION: str = "dev-deterministic-v1"
+    MEDIA_CLASSIFICATION_MAX_IMAGES: int = 3
+    MEDIA_CLASSIFICATION_INFERENCE_MAX_EDGE: int = 640
+    MEDIA_CLASSIFICATION_HIGH_CONFIDENCE: float = 0.85
+    MEDIA_CLASSIFICATION_MEDIUM_CONFIDENCE: float = 0.55
+    MEDIA_CLASSIFICATION_TIMEOUT_SECONDS: int = 60
+
+    # --- User intent for hybrid classification (Substage 3C-1) — default OFF ---
+    MEDIA_USER_INTENT_ENABLED: bool = False
+
+    # --- Category Resolver shadow mode (Substage 3C-3) — default OFF ---
+    CATEGORY_RESOLVER_ENABLED: bool = False
+    CATEGORY_RESOLVER_AUTO_ASSIGN_ENABLED: bool = False
+    # --- Draft category enrichment from resolver (Substage 3C-4) — default OFF ---
+    CATEGORY_RESOLVER_DRAFT_ENRICHMENT_ENABLED: bool = False
+
+    # --- Local visual evidence (Substage 3C-2) — default OFF ---
+    MEDIA_VISUAL_EVIDENCE_ENABLED: bool = False
+    MEDIA_VISUAL_EVIDENCE_MAX_IMAGES: int = 3
+    MEDIA_VISUAL_EVIDENCE_TIMEOUT_SECONDS: int = 120
+    MEDIA_VISUAL_EVIDENCE_USE_STUB: bool = False
+
+    # --- Description mode UX (Substage 3C-2) — default OFF ---
+    MEDIA_DESCRIPTION_MODE_ENABLED: bool = False
 
     # --- Direct upload + CDN (Stage 5) — default OFF ---
     MEDIA_DIRECT_UPLOAD_ENABLED: bool = False

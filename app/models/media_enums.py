@@ -48,9 +48,16 @@ MEDIA_LIFECYCLE_TRANSITIONS: dict[
             MediaLifecycleStatus.ready,
             MediaLifecycleStatus.rejected,
             MediaLifecycleStatus.failed,
+            # Category change before publish — requeue for new category context.
+            MediaLifecycleStatus.queued,
         }
     ),
-    MediaLifecycleStatus.ready: frozenset(),
+    MediaLifecycleStatus.ready: frozenset(
+        {
+            # Category change before publish — requeue without bumping global pipeline version.
+            MediaLifecycleStatus.queued,
+        }
+    ),
     MediaLifecycleStatus.rejected: frozenset(),
     MediaLifecycleStatus.failed: frozenset(),
 }
