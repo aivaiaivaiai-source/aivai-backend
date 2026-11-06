@@ -34,8 +34,9 @@ class ListingFeedPage(BaseModel):
     Facets (optional, Package B+):
     - Omitted when the client does not request ``facets``.
     - Self-exclusion: each field facet is computed with all current filters
-      EXCEPT that field's own constraint (so selecting rooms=2 does not zero
-      other room options).
+      EXCEPT that field's own constraint (EAV attrs and column-backed
+      brand/model/fuel/transmission/year/steering/engine_volume).
+    - brand/model facet values are canonical ref ids, not display names.
     - Counts cover the full filtered active set (not the current page).
     - Stable option values are identities; labels come from category metadata.
     - ``_category`` facet groups by listing.category_id among category_ids.

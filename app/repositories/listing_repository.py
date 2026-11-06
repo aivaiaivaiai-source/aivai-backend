@@ -612,6 +612,29 @@ class ListingRepository(BaseRepository[Listing]):
         return int(result.scalar_one())
 
     @staticmethod
+    def _kwargs_excluding_facet(base: dict, key: str) -> dict:
+        """Drop the facet's own column constraint. Other filters stay."""
+        kwargs = dict(base)
+        column_clears = {
+            "brand": ("brand",),
+            "vehicle_brand": ("brand",),
+            "model": ("model",),
+            "vehicle_model": ("model",),
+            "fuel": ("fuel",),
+            "transmission": ("transmission",),
+            "year": ("year_min", "year_max"),
+            "steering": ("steering",),
+            "steering_side": ("steering",),
+            "engine_volume": ("engine_volume",),
+            "vehicle_execution": ("vehicle_execution",),
+            "city": ("city",),
+            "region": ("region",),
+        }
+        for name in column_clears.get(key, ()):
+            kwargs[name] = None
+        return kwargs
+
+    @staticmethod
     def _attrs_excluding_field(
         field_attrs: dict[str, str] | None, field_key: str
     ) -> dict[str, str] | None:
@@ -726,13 +749,9 @@ class ListingRepository(BaseRepository[Listing]):
 
             attrs_ex = self._attrs_excluding_field(field_attrs, key)
             # Matching listing ids under self-excluded filters.
-            # Top-level city/region query params are also self-excluded when
-            # the requested facet key is city/region (same Search identity).
-            facet_kwargs = dict(base_filter_kwargs)
-            if key == "city":
-                facet_kwargs["city"] = None
-            elif key == "region":
-                facet_kwargs["region"] = None
+            # The facet field itself is dropped: EAV attrs, city/region, and
+            # column-backed Transport filters (brand, model, fuel, …).
+            facet_kwargs = self._kwargs_excluding_facet(base_filter_kwargs, key)
             id_stmt = select(Listing.id).select_from(Listing)
             id_stmt = self._apply_search_filters(
                 id_stmt,
@@ -745,22 +764,37 @@ class ListingRepository(BaseRepository[Listing]):
                 results[key] = []
                 continue
 
+            brand_facet = key in ("brand", "vehicle_brand")
+            model_facet = key in ("model", "vehicle_model")
+            value_key = key
+            if brand_facet:
+                value_key_filter = ("brand", "vehicle_brand")
+            elif model_facet:
+                value_key_filter = ("model", "vehicle_model")
+            else:
+                value_key_filter = (value_key,)
             fv_stmt = select(
                 ListingFieldValue.listing_id,
                 ListingFieldValue.value_text,
                 ListingFieldValue.value_int,
                 ListingFieldValue.value_decimal,
                 ListingFieldValue.value_bool,
+                ListingFieldValue.ref_brand_id,
+                ListingFieldValue.ref_model_id,
             ).where(
                 ListingFieldValue.listing_id.in_(listing_ids),
-                ListingFieldValue.field_key == key,
+                ListingFieldValue.field_key.in_(value_key_filter),
             )
             fv_rows = await self._session.execute(fv_stmt)
             # listing_id -> set of normalized string tokens/values
             per_listing: dict[int, set[str]] = {}
-            for lid, v_text, v_int, v_dec, v_bool in fv_rows.all():
+            for lid, v_text, v_int, v_dec, v_bool, ref_brand, ref_model in fv_rows.all():
                 tokens: set[str] = set()
-                if v_text is not None and str(v_text).strip():
+                if brand_facet and ref_brand is not None:
+                    tokens.add(str(int(ref_brand)))
+                elif model_facet and ref_model is not None:
+                    tokens.add(str(int(ref_model)))
+                elif v_text is not None and str(v_text).strip():
                     raw = str(v_text).strip()
                     if "||" in raw:
                         tokens.update(p.strip() for p in raw.split("||") if p.strip())

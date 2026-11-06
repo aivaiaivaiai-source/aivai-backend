@@ -90,7 +90,10 @@ from app.seeds.vehicle_data import BRAND_ALIASES, BRANDS, MODEL_ALIASES, MODELS
 from app.seeds.transport_canonical import RETIRED_TRANSPORT_SLUGS
 from app.seeds.transport_v2_1 import RETIRE_BRANCH_ROOT_SLUGS, RETIRE_LEAF_SLUGS
 from app.seeds.home_garden_canonical import RETIRED_HOME_GARDEN_LEGACY_SLUGS
-from app.seeds.jobs_create_fields import JOBS_V2_INACTIVE_SECTOR_SLUGS
+from app.seeds.jobs_create_fields import (
+    JOBS_V2_INACTIVE_SECTOR_SLUGS,
+    JOBS_V2_RETIRED_LEGACY_SLUGS,
+)
 from app.seeds.real_estate_v2 import RETIRED_REAL_ESTATE_SLUGS
 from app.services.category_text import normalize_alias_keys
 
@@ -138,6 +141,7 @@ class CategorySeedLoader:
         alias_stats = await self._seed_aliases()
         await self._seed_fields()
         await self._seed_filters()
+        await self._retire_jobs_legacy_schemas()
         await self._seed_rules()
         v_stats = await self._seed_vehicles()
         await self._session.commit()
@@ -255,7 +259,8 @@ class CategorySeedLoader:
 
         existing = await self._session.execute(select(Category).where(Category.slug == slug))
         row = existing.scalar_one_or_none()
-        # Soft-inactive Jobs sectors (e.g. abroad = geography, not profession).
+        # Soft-inactive Jobs nodes stay inactive (abroad + legacy vacancy/resume).
+        # jobs root is not in this set.
         keep_active = slug not in JOBS_V2_INACTIVE_SECTOR_SLUGS
         if row is None:
             row = Category(
@@ -553,6 +558,8 @@ class CategorySeedLoader:
                     )
 
         for cat_slug, fields in jobs_hiring.items():
+            if cat_slug in JOBS_V2_INACTIVE_SECTOR_SLUGS:
+                continue
             cat_id = self._slug_to_id.get(cat_slug)
             if cat_id is None:
                 continue
@@ -572,6 +579,8 @@ class CategorySeedLoader:
                     create_intent=HIRING,
                 )
         for cat_slug, fields in jobs_seeking.items():
+            if cat_slug in JOBS_V2_INACTIVE_SECTOR_SLUGS:
+                continue
             cat_id = self._slug_to_id.get(cat_slug)
             if cat_id is None:
                 continue
@@ -3834,6 +3843,36 @@ class CategorySeedLoader:
             ).scalars().all()
             for row in existing_parent:
                 await self._session.delete(row)
+
+    async def _retire_jobs_legacy_schemas(self) -> None:
+        """Inactive vacancy/resume nodes are not publishable schema homes.
+
+        Aliases stay. jobs root and the 19 sectors are not touched.
+        Abroad stays inactive and keeps its existing historical fields.
+        Refuses to strip a node that already has listings.
+        """
+        from sqlalchemy import func
+
+        from app.models.listing import Listing
+
+        for slug in sorted(JOBS_V2_RETIRED_LEGACY_SLUGS):
+            row = (
+                await self._session.execute(select(Category).where(Category.slug == slug))
+            ).scalar_one_or_none()
+            if row is None:
+                continue
+            self._slug_to_id[slug] = row.id
+            if row.is_active:
+                row.is_active = False
+            listing_count = await self._session.scalar(
+                select(func.count()).select_from(Listing).where(Listing.category_id == row.id)
+            )
+            if int(listing_count or 0) > 0:
+                raise RuntimeError(
+                    f"refusing to retire Jobs legacy schema with listings: {slug}"
+                )
+            await self._clear_picker_parent_live_sot(row.id)
+        await self._session.flush()
 
     async def _upsert_core_field(
         self,

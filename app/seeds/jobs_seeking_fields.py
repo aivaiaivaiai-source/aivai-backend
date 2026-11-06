@@ -95,7 +95,7 @@ def _common_prefix(section: dict[str, Any]) -> list[FieldDef]:
         _f(
             "experience",
             "Опыт работы",
-            _E,
+            _MS,
             options=_choices(*CREATE_EXPERIENCE),
         ),
         _f(

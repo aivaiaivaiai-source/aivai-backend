@@ -20,6 +20,7 @@ def test_canonical_sectors_are_exactly_19() -> None:
     assert len(set(JOBS_V2_CANONICAL_SLUGS)) == 19
     assert "jobs-rabota-za-rubezhom" not in JOBS_V2_CANONICAL_SLUGS
     assert "jobs-rabota-za-rubezhom" in JOBS_V2_INACTIVE_SECTOR_SLUGS
+    assert "jobs" not in JOBS_V2_INACTIVE_SECTOR_SLUGS
     for slug in (
         "jobs-vacancies",
         "jobs-resume",
@@ -28,6 +29,7 @@ def test_canonical_sectors_are_exactly_19() -> None:
         "jobs-rabota-za-rubezhom",
     ):
         assert slug in JOBS_V2_EXCLUDED_FROM_CREATE_PICKER
+        assert slug in JOBS_V2_INACTIVE_SECTOR_SLUGS
         assert slug not in JOBS_V2_CANONICAL_SLUGS
 
 
@@ -232,8 +234,20 @@ def test_roles_shared_between_intents() -> None:
     assert next(f for f in seeking if f[0] == "job_role")[1] == "Желаемая должность"
 
 
-def test_job_sections_catalog_still_has_meta_for_browse() -> None:
+def test_legacy_sections_are_historical_not_active_sectors() -> None:
+    """Historical catalog rows may remain. They are not canonical active sectors."""
     slugs = {s["category_slug"] for s in JOB_SECTIONS.values()}
     assert "jobs-vakansii-bez-opyta" in slugs
     assert "jobs-rezyume-soiskateley" in slugs
-    assert "jobs-rabota-za-rubezhom" in slugs  # historical row catalog kept
+    assert "jobs-rabota-za-rubezhom" in slugs
+    assert "jobs-vacancies" not in slugs
+    assert "jobs-resume" not in slugs
+    for slug in (
+        "jobs-vacancies",
+        "jobs-resume",
+        "jobs-vakansii-bez-opyta",
+        "jobs-rezyume-soiskateley",
+        "jobs-rabota-za-rubezhom",
+    ):
+        assert slug not in JOBS_V2_CANONICAL_SLUGS
+        assert slug in JOBS_V2_INACTIVE_SECTOR_SLUGS

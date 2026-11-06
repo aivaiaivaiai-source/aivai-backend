@@ -75,6 +75,9 @@ _WORK_MODE = (
     "4/3",
     "3/3",
     "2/2",
+    "2/1",
+    "1/2",
+    "3/1",
     "По договорённости",
 )
 _WORK_HOURS = tuple(
@@ -126,12 +129,18 @@ JOBS_V2_LEGACY_SLUGS: frozenset[str] = frozenset(
     }
 )
 
-# Soft-deactivated: geography via geo catalog, not a profession sector.
+# Vacancy/resume buckets are not profession sectors. Kept as rows, not publishable.
+JOBS_V2_RETIRED_LEGACY_SLUGS: frozenset[str] = (
+    JOBS_V2_META_SLUGS | JOBS_V2_LEGACY_SLUGS
+)
+
+# Soft-inactive: abroad is geography, not a profession. Legacy vacancy/resume
+# nodes are not canonical sectors. jobs root is not in this set.
 JOBS_V2_INACTIVE_SECTOR_SLUGS: frozenset[str] = frozenset(
     {
         "jobs-rabota-za-rubezhom",
     }
-)
+) | JOBS_V2_RETIRED_LEGACY_SLUGS
 
 JOBS_V2_EXCLUDED_FROM_CREATE_PICKER: frozenset[str] = (
     JOBS_V2_META_SLUGS | JOBS_V2_LEGACY_SLUGS | JOBS_V2_INACTIVE_SECTOR_SLUGS
@@ -181,7 +190,7 @@ def fields_for_job_section(section: dict[str, Any]) -> list[FieldDef]:
                 _f(
                     "experience",
                     "Опыт",
-                    _E,
+                    _MS,
                     options=_choices(*_CREATE_EXPERIENCE),
                 )
             )
