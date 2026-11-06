@@ -65,6 +65,10 @@ async def get_feed(
     q: str | None = Query(default=None),
     category_id: int | None = Query(default=None),
     category_slug: str | None = Query(default=None),
+    category_ids: str | None = Query(
+        default=None,
+        description="Optional comma-separated category IDs (Package B property counts).",
+    ),
     city: str | None = Query(default=None),
     region: str | None = Query(default=None),
     brand: str | None = Query(default=None),
@@ -112,6 +116,14 @@ async def get_feed(
         default=None,
         description="Jobs Search V2: hiring | job_seeking. Optional; ignored when omitted.",
     ),
+    facets: str | None = Query(
+        default=None,
+        description=(
+            "Optional comma-separated facet field keys, e.g. "
+            "deal_type,rooms,district,_category. "
+            "Omitted = no aggregation (backward compatible)."
+        ),
+    ),
     limit: int = Query(default=20, ge=1, le=MAX_LIMIT),
     offset: int = Query(default=0, ge=0),
 ) -> ListingFeedPage:
@@ -120,11 +132,23 @@ async def get_feed(
             status_code=400,
             detail="job_intent must be hiring or job_seeking",
         )
-    category_ids = await _resolve_category_ids(
+    resolved_category_ids = await _resolve_category_ids(
         category_id=category_id,
         category_slug=category_slug,
         session=session,
     )
+    if category_ids:
+        parsed_ids: list[int] = []
+        for part in category_ids.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            try:
+                parsed_ids.append(int(part))
+            except ValueError:
+                continue
+        if parsed_ids:
+            resolved_category_ids = parsed_ids
     execution: VehicleExecution | None = parse_execution(vehicle_execution)
     field_attrs: dict[str, str] | None = None
     if attrs:
@@ -138,10 +162,28 @@ async def get_feed(
                 for k, v in parsed.items()
                 if k is not None and v is not None and str(v).strip()
             } or None
+    facet_keys: list[str] | None = None
+    if facets:
+        facet_keys = [
+            p.strip()
+            for p in facets.split(",")
+            if p is not None and str(p).strip()
+        ] or None
+        # Whitelist-ish: reject empty / overly long keys (no SQL injection path —
+        # keys are bound as ORM parameters, never interpolated into SQL).
+        if facet_keys is not None:
+            cleaned: list[str] = []
+            for k in facet_keys:
+                if len(k) > 64:
+                    continue
+                if not all(ch.isalnum() or ch in ("_", "-") for ch in k):
+                    continue
+                cleaned.append(k)
+            facet_keys = cleaned or None
     return await service.get_feed(
         q=q,
-        category_id=None if category_ids else category_id,
-        category_ids=category_ids,
+        category_id=None if resolved_category_ids else category_id,
+        category_ids=resolved_category_ids,
         city=city,
         region=region,
         brand=brand,
@@ -162,6 +204,7 @@ async def get_feed(
         job_intent=job_intent,
         has_photo=has_photo,
         sort=sort,
+        facet_keys=facet_keys,
         limit=limit,
         offset=offset,
     )

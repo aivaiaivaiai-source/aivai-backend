@@ -91,6 +91,7 @@ from app.seeds.transport_canonical import RETIRED_TRANSPORT_SLUGS
 from app.seeds.transport_v2_1 import RETIRE_BRANCH_ROOT_SLUGS, RETIRE_LEAF_SLUGS
 from app.seeds.home_garden_canonical import RETIRED_HOME_GARDEN_LEGACY_SLUGS
 from app.seeds.jobs_create_fields import JOBS_V2_INACTIVE_SECTOR_SLUGS
+from app.seeds.real_estate_v2 import RETIRED_REAL_ESTATE_SLUGS
 from app.services.category_text import normalize_alias_keys
 
 logger = logging.getLogger(__name__)
@@ -101,6 +102,7 @@ _RETIRED_CATEGORY_SLUGS: frozenset[str] = (
     | RETIRE_BRANCH_ROOT_SLUGS
     | RETIRE_LEAF_SLUGS
     | RETIRED_HOME_GARDEN_LEGACY_SLUGS
+    | RETIRED_REAL_ESTATE_SLUGS
 )
 
 # Alias/model nicknames must never be VehicleBrand.slug.
@@ -602,6 +604,7 @@ class CategorySeedLoader:
         await self._seed_auto_parts_v2_fields()
         await self._seed_tuning_accessories_v2_fields()
         await self._seed_auto_services_v2_fields()
+        await self._seed_real_estate_v2_fields()
         for cat_slug, fields in OPTIONAL_FIELDS.items():
             if cat_slug in _RETIRED_CATEGORY_SLUGS:
                 continue
@@ -3120,6 +3123,275 @@ class CategorySeedLoader:
                         config=config,
                     )
                 )
+
+    async def _seed_real_estate_v2_fields(self) -> None:
+        """Real Estate V2 — property-leaf Create + Search SoT; retire deal dual-tree."""
+        from app.models.category_enums import CategoryEntityType
+        from app.seeds.real_estate_v2 import (
+            APARTMENTS_ID,
+            APARTMENTS_SLUG,
+            CANONICAL_LEAF_LABELS,
+            CANONICAL_LEAF_SLUGS,
+            CANONICAL_LEAF_SORT,
+            COMMERCIAL_ID,
+            COMMERCIAL_SLUG,
+            GARAGES_ID,
+            GARAGES_LABEL,
+            GARAGES_SLUG,
+            HOUSES_ID,
+            HOUSES_SLUG,
+            LAND_ID,
+            LAND_SLUG,
+            LEGACY_DEAL_IDS,
+            LEGACY_DEAL_SLUGS,
+            PARKING_LABEL,
+            PARKING_SLUG,
+            RE_ALIASES,
+            RE_CORE_FIELDS_BY_SLUG,
+            RE_SEARCH_FILTERS_BY_SLUG,
+            RETIRED_SKELETON_IDS,
+            RETIRED_SKELETON_SLUGS,
+            ROOMS_ID,
+            ROOMS_SLUG,
+            ROOT_ID,
+            ROOT_SLUG,
+        )
+
+        root_id = self._slug_to_id.get(ROOT_SLUG)
+        if root_id is None:
+            return
+        root = (
+            await self._session.execute(select(Category).where(Category.id == root_id))
+        ).scalar_one_or_none()
+        if root is None:
+            return
+        if root.id != ROOT_ID:
+            # Keep historical ID if remapped; still treat as picker root.
+            pass
+        root.is_active = True
+        root.name = "Недвижимость"
+        root.parent_id = None
+
+        # Clear live Create/Search schema on picker root.
+        for model_cls in (CategoryCoreField, CategoryOptionalField, CategoryFilter):
+            for row in (
+                await self._session.execute(
+                    select(model_cls).where(model_cls.category_id == root.id)
+                )
+            ).scalars().all():
+                await self._session.delete(row)
+
+        expected_ids = {
+            APARTMENTS_SLUG: APARTMENTS_ID,
+            HOUSES_SLUG: HOUSES_ID,
+            ROOMS_SLUG: ROOMS_ID,
+            LAND_SLUG: LAND_ID,
+            COMMERCIAL_SLUG: COMMERCIAL_ID,
+            GARAGES_SLUG: GARAGES_ID,
+        }
+
+        for slug, expected_id in expected_ids.items():
+            row = (
+                await self._session.execute(
+                    select(Category).where(Category.id == expected_id)
+                )
+            ).scalar_one_or_none()
+            if row is None:
+                # Fallback: find by current slug map.
+                cid = self._slug_to_id.get(slug)
+                if cid is None:
+                    continue
+                row = (
+                    await self._session.execute(
+                        select(Category).where(Category.id == cid)
+                    )
+                ).scalar_one_or_none()
+                if row is None:
+                    continue
+            row.slug = slug
+            row.name = CANONICAL_LEAF_LABELS[slug]
+            row.parent_id = root.id
+            row.is_active = True
+            row.sort_order = CANONICAL_LEAF_SORT[slug]
+            row.entity_type = CategoryEntityType.object
+            self._slug_to_id[slug] = row.id
+
+        # Rename garages away from combined slug if still present.
+        garage = (
+            await self._session.execute(
+                select(Category).where(Category.id == GARAGES_ID)
+            )
+        ).scalar_one_or_none()
+        if garage is not None:
+            garage.slug = GARAGES_SLUG
+            garage.name = GARAGES_LABEL
+            garage.parent_id = root.id
+            garage.is_active = True
+            garage.sort_order = CANONICAL_LEAF_SORT[GARAGES_SLUG]
+            self._slug_to_id[GARAGES_SLUG] = GARAGES_ID
+            self._slug_to_id.pop("real-estate-garazhi-i-parkovki", None)
+
+        # Ensure Parking leaf exists (new).
+        parking_id = self._slug_to_id.get(PARKING_SLUG)
+        if parking_id is None:
+            parking = Category(
+                name=PARKING_LABEL,
+                slug=PARKING_SLUG,
+                parent_id=root.id,
+                entity_type=CategoryEntityType.object,
+                sort_order=CANONICAL_LEAF_SORT[PARKING_SLUG],
+                is_active=True,
+            )
+            self._session.add(parking)
+            await self._session.flush()
+            parking_id = parking.id
+            self._slug_to_id[PARKING_SLUG] = parking_id
+        else:
+            parking = (
+                await self._session.execute(
+                    select(Category).where(Category.id == parking_id)
+                )
+            ).scalar_one_or_none()
+            if parking is not None:
+                parking.name = PARKING_LABEL
+                parking.slug = PARKING_SLUG
+                parking.parent_id = root.id
+                parking.is_active = True
+                parking.sort_order = CANONICAL_LEAF_SORT[PARKING_SLUG]
+
+        # Retire legacy deal homes + unused skeletons.
+        for rid in (*LEGACY_DEAL_IDS, *RETIRED_SKELETON_IDS):
+            row = (
+                await self._session.execute(select(Category).where(Category.id == rid))
+            ).scalar_one_or_none()
+            if row is None:
+                continue
+            row.is_active = False
+            for model_cls in (CategoryCoreField, CategoryOptionalField, CategoryFilter):
+                for fr in (
+                    await self._session.execute(
+                        select(model_cls).where(model_cls.category_id == rid)
+                    )
+                ).scalars().all():
+                    await self._session.delete(fr)
+
+        for slug in LEGACY_DEAL_SLUGS | RETIRED_SKELETON_SLUGS:
+            cid = self._slug_to_id.get(slug)
+            if cid is None:
+                continue
+            row = (
+                await self._session.execute(select(Category).where(Category.id == cid))
+            ).scalar_one_or_none()
+            if row is not None and row.is_active:
+                row.is_active = False
+
+        # Seed leaf schemas + filters.
+        for slug in CANONICAL_LEAF_SLUGS:
+            cat_id = self._slug_to_id.get(slug)
+            if cat_id is None:
+                continue
+            fields = RE_CORE_FIELDS_BY_SLUG.get(slug, [])
+            wanted_keys = {row[0] for row in fields}
+            existing_core = (
+                await self._session.execute(
+                    select(CategoryCoreField).where(
+                        CategoryCoreField.category_id == cat_id,
+                        CategoryCoreField.create_intent.is_(None),
+                    )
+                )
+            ).scalars().all()
+            for row in existing_core:
+                if row.field_key not in wanted_keys:
+                    await self._session.delete(row)
+            for row in (
+                await self._session.execute(
+                    select(CategoryOptionalField).where(
+                        CategoryOptionalField.category_id == cat_id
+                    )
+                )
+            ).scalars().all():
+                await self._session.delete(row)
+
+            for sort_i, (key, label, ftype, required, sort, options, hint) in enumerate(
+                fields
+            ):
+                await self._upsert_core_field(
+                    cat_id,
+                    key,
+                    label,
+                    ftype,
+                    sort if sort is not None else sort_i,
+                    hint,
+                    required=required,
+                    options=options,
+                )
+
+            filters = RE_SEARCH_FILTERS_BY_SLUG.get(slug, [])
+            wanted_filters = {row[0] for row in filters}
+            for row in (
+                await self._session.execute(
+                    select(CategoryFilter).where(CategoryFilter.category_id == cat_id)
+                )
+            ).scalars().all():
+                if row.filter_key not in wanted_filters:
+                    await self._session.delete(row)
+            for sort_i, (key, label, ftype, sort, config) in enumerate(filters):
+                stmt = select(CategoryFilter).where(
+                    CategoryFilter.category_id == cat_id,
+                    CategoryFilter.filter_key == key,
+                )
+                existing_f = (await self._session.execute(stmt)).scalar_one_or_none()
+                if existing_f is None:
+                    self._session.add(
+                        CategoryFilter(
+                            category_id=cat_id,
+                            filter_key=key,
+                            label=label,
+                            filter_type=ftype,
+                            sort_order=sort if sort is not None else sort_i,
+                            config=config,
+                        )
+                    )
+                else:
+                    existing_f.label = label
+                    existing_f.filter_type = ftype
+                    existing_f.sort_order = sort if sort is not None else sort_i
+                    existing_f.config = config
+
+        async def _upsert_alias(alias: str, target_slug: str, *, weight: int = 100) -> None:
+            target_id = self._slug_to_id.get(target_slug)
+            if target_id is None:
+                return
+            spaced, compact = normalize_alias_keys(alias)
+            existing = (
+                await self._session.execute(
+                    select(CategoryAlias).where(
+                        CategoryAlias.alias_normalized == spaced,
+                        CategoryAlias.locale == self._locale,
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing is None:
+                self._session.add(
+                    CategoryAlias(
+                        category_id=target_id,
+                        alias=alias,
+                        alias_normalized=spaced,
+                        alias_compact=compact,
+                        locale=self._locale,
+                        weight=weight,
+                        is_enabled=True,
+                    )
+                )
+            else:
+                existing.category_id = target_id
+                existing.alias = alias
+                existing.alias_compact = compact
+                existing.is_enabled = True
+                existing.weight = weight
+
+        for alias, target_slug, weight in RE_ALIASES:
+            await _upsert_alias(alias, target_slug, weight=weight)
 
     async def _seed_tuning_accessories_v2_fields(self) -> None:
         """Transport → Аксессуары и тюнинг V2 Create + Search SoT."""

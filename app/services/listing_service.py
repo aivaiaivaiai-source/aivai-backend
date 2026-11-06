@@ -30,6 +30,7 @@ from app.repositories.listing_repository import ListingRepository
 from app.schemas.listing import (
     ListingCreate,
     ListingFeedPage,
+    ListingFacetOptionCount,
     ListingRead,
     ListingStatusUpdate,
     ListingUpdate,
@@ -131,7 +132,15 @@ class ListingService:
         return self._to_read(row)
 
     async def _ensure_publishable_leaf_category(self, category_id: int) -> None:
-        """Reject activate/publish on picker-only parents (active children present)."""
+        """Reject activate/publish on picker-only parents or inactive/retired categories."""
+        category = await self._categories.get_by_id(category_id)
+        if category is None:
+            raise EntityNotFoundError("Category", entity_id=category_id)
+        if not category.is_active:
+            raise AppException(
+                "Категория недоступна для публикации.",
+                status_code=400,
+            )
         if await self._categories.has_active_children(category_id):
             raise AppException(
                 "Выберите конкретную подкатегорию перед публикацией.",
@@ -159,9 +168,11 @@ class ListingService:
             )
 
         uses_placeholder = data.uses_placeholder_image
+        # Reject inactive/retired and picker-only parents for any new listing
+        # (draft or active). Historical rows on those categories remain readable.
+        if data.category_id is not None:
+            await self._ensure_publishable_leaf_category(data.category_id)
         if data.status == ListingStatus.active:
-            if data.category_id is not None:
-                await self._ensure_publishable_leaf_category(data.category_id)
             self._validate_active_publish(
                 category_slug=category_slug,
                 images=None,
@@ -269,8 +280,7 @@ class ListingService:
                         "Category",
                         entity_id=cat_id,
                     )
-                if listing.status == ListingStatus.active:
-                    await self._ensure_publishable_leaf_category(cat_id)
+                await self._ensure_publishable_leaf_category(cat_id)
                 if cat_id != previous_category_id:
                     payload["category_selection_source"] = CategorySelectionSource.manual
 
@@ -498,6 +508,36 @@ class ListingService:
         fx_service.apply_listing_fx_snapshot(listing, rate=rate_row.rate)
         await self._session.flush()
 
+    @staticmethod
+    def _reject_inverted_field_ranges(attrs: dict[str, str]) -> None:
+        """Reject generic ``field__min`` > ``field__max`` pairs (area, etc.)."""
+        mins: dict[str, Decimal] = {}
+        maxs: dict[str, Decimal] = {}
+        for key, raw in attrs.items():
+            if not key or raw is None:
+                continue
+            if key.endswith("__min"):
+                base = key[: -len("__min")]
+                try:
+                    mins[base] = Decimal(str(raw).strip().replace(",", "."))
+                except Exception:
+                    continue
+            elif key.endswith("__max"):
+                base = key[: -len("__max")]
+                try:
+                    maxs[base] = Decimal(str(raw).strip().replace(",", "."))
+                except Exception:
+                    continue
+        for base, lo in mins.items():
+            hi = maxs.get(base)
+            if hi is None:
+                continue
+            if lo > hi:
+                raise AppException(
+                    f"{base}__min cannot be greater than {base}__max",
+                    status_code=400,
+                )
+
     async def get_feed(
         self,
         *,
@@ -524,6 +564,7 @@ class ListingService:
         region: str | None = None,
         has_photo: bool | None = None,
         sort: str | None = None,
+        facet_keys: list[str] | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> ListingFeedPage:
@@ -574,6 +615,7 @@ class ListingService:
 
         # Rental V2: price range / price sort require rental_price_unit.
         attrs = dict(field_attrs or {})
+        self._reject_inverted_field_ranges(attrs)
         rental_unit = (attrs.get("rental_price_unit") or "").strip()
         wants_price = min_price is not None or max_price is not None
         sort_key = (sort or attrs.get("sort") or "").strip().lower()
@@ -665,9 +707,26 @@ class ListingService:
             limit=limit,
             offset=offset,
         )
+        facets_out = None
+        if facet_keys:
+            facet_filter_kwargs = {
+                k: v for k, v in filter_kwargs.items() if k != "sort"
+            }
+            raw = await self._listings.facet_counts(
+                facet_keys=facet_keys,
+                **facet_filter_kwargs,
+            )
+            facets_out = {
+                k: [
+                    ListingFacetOptionCount(value=v, count=c)
+                    for v, c in pairs
+                ]
+                for k, pairs in raw.items()
+            }
         return ListingFeedPage(
             items=[self._to_read(x) for x in rows],
             total=total,
+            facets=facets_out,
         )
 
     async def get_mine(

@@ -69,6 +69,19 @@ def test_default_currency_matrix() -> None:
     assert default_currency_for(
         "real-estate-kvartiry", deal_type="Сдаю"
     ) == Currency.KGS
+    # Real Estate V2 stable deal_type values.
+    assert default_currency_for(
+        "real-estate-kvartiry", deal_type="sell"
+    ) == Currency.USD
+    assert default_currency_for(
+        "real-estate-kvartiry", deal_type="buy"
+    ) == Currency.USD
+    assert default_currency_for(
+        "real-estate-kvartiry", deal_type="rent"
+    ) == Currency.KGS
+    assert default_currency_for(
+        "real-estate-kvartiry", deal_type="want_rent"
+    ) == Currency.KGS
 
 
 def test_normalized_helpers() -> None:

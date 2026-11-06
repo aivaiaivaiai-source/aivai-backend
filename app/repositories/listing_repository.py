@@ -611,6 +611,183 @@ class ListingRepository(BaseRepository[Listing]):
         result = await self._session.execute(stmt)
         return int(result.scalar_one())
 
+    @staticmethod
+    def _attrs_excluding_field(
+        field_attrs: dict[str, str] | None, field_key: str
+    ) -> dict[str, str] | None:
+        """Self-facet semantics: drop exact + range keys for ``field_key``."""
+        if not field_attrs:
+            return None
+        out: dict[str, str] = {}
+        prefix = f"{field_key}__"
+        for k, v in field_attrs.items():
+            if k == field_key or k.startswith(prefix):
+                continue
+            out[k] = v
+        return out or None
+
+    @staticmethod
+    def _token_overlap(stored: str | None, option: str) -> bool:
+        if stored is None:
+            return False
+        if stored == option:
+            return True
+        sep = "||"
+        padded = f"{sep}{stored}{sep}"
+        token = f"{sep}{option}{sep}"
+        if token in padded:
+            return True
+        return option.lower() in stored.lower()
+
+    async def facet_counts(
+        self,
+        *,
+        facet_keys: list[str],
+        category_id: int | None = None,
+        category_ids: list[int] | None = None,
+        min_price: Decimal | None = None,
+        max_price: Decimal | None = None,
+        currency: Currency | None = None,
+        status: ListingStatus | None = None,
+        statuses: list[ListingStatus] | None = None,
+        owner_id: int | None = None,
+        q: str | None = None,
+        city: str | None = None,
+        brand: str | None = None,
+        model: str | None = None,
+        year_min: int | None = None,
+        year_max: int | None = None,
+        steering: str | None = None,
+        engine_volume: str | None = None,
+        fuel: str | None = None,
+        transmission: str | None = None,
+        vehicle_execution: VehicleExecution | None = None,
+        field_attrs: dict[str, str] | None = None,
+        job_intent: str | None = None,
+        region: str | None = None,
+        has_photo: bool | None = None,
+    ) -> dict[str, list[tuple[str, int]]]:
+        """Aggregate facet option counts for requested keys.
+
+        Uses EXISTS-based filters (no EAV join inflation). Category facet
+        ``_category`` counts distinct listings per category_id. Field facets
+        self-exclude the target field constraint.
+        """
+        results: dict[str, list[tuple[str, int]]] = {}
+        if not facet_keys:
+            return results
+
+        base_filter_kwargs = dict(
+            category_id=category_id,
+            category_ids=category_ids,
+            min_price=min_price,
+            max_price=max_price,
+            currency=currency,
+            status=status,
+            statuses=statuses,
+            owner_id=owner_id,
+            q=q,
+            city=city,
+            brand=brand,
+            model=model,
+            year_min=year_min,
+            year_max=year_max,
+            steering=steering,
+            engine_volume=engine_volume,
+            fuel=fuel,
+            transmission=transmission,
+            vehicle_execution=vehicle_execution,
+            job_intent=job_intent,
+            region=region,
+            has_photo=has_photo,
+        )
+
+        for raw_key in facet_keys:
+            key = (raw_key or "").strip()
+            if not key:
+                continue
+            if key == "_category":
+                stmt = select(Listing.category_id, func.count()).select_from(
+                    Listing
+                )
+                stmt = self._apply_search_filters(
+                    stmt,
+                    **base_filter_kwargs,
+                    field_attrs=field_attrs,
+                )
+                stmt = stmt.group_by(Listing.category_id)
+                rows = await self._session.execute(stmt)
+                results[key] = [
+                    (str(cid), int(cnt))
+                    for cid, cnt in rows.all()
+                    if cid is not None
+                ]
+                continue
+
+            attrs_ex = self._attrs_excluding_field(field_attrs, key)
+            # Matching listing ids under self-excluded filters.
+            # Top-level city/region query params are also self-excluded when
+            # the requested facet key is city/region (same Search identity).
+            facet_kwargs = dict(base_filter_kwargs)
+            if key == "city":
+                facet_kwargs["city"] = None
+            elif key == "region":
+                facet_kwargs["region"] = None
+            id_stmt = select(Listing.id).select_from(Listing)
+            id_stmt = self._apply_search_filters(
+                id_stmt,
+                **facet_kwargs,
+                field_attrs=attrs_ex,
+            )
+            id_rows = await self._session.execute(id_stmt)
+            listing_ids = [int(r[0]) for r in id_rows.all()]
+            if not listing_ids:
+                results[key] = []
+                continue
+
+            fv_stmt = select(
+                ListingFieldValue.listing_id,
+                ListingFieldValue.value_text,
+                ListingFieldValue.value_int,
+                ListingFieldValue.value_decimal,
+                ListingFieldValue.value_bool,
+            ).where(
+                ListingFieldValue.listing_id.in_(listing_ids),
+                ListingFieldValue.field_key == key,
+            )
+            fv_rows = await self._session.execute(fv_stmt)
+            # listing_id -> set of normalized string tokens/values
+            per_listing: dict[int, set[str]] = {}
+            for lid, v_text, v_int, v_dec, v_bool in fv_rows.all():
+                tokens: set[str] = set()
+                if v_text is not None and str(v_text).strip():
+                    raw = str(v_text).strip()
+                    if "||" in raw:
+                        tokens.update(p.strip() for p in raw.split("||") if p.strip())
+                    else:
+                        tokens.add(raw)
+                elif v_int is not None:
+                    tokens.add(str(v_int))
+                elif v_dec is not None:
+                    # Normalize decimal display for facet keys (72 / 72.5).
+                    d = v_dec
+                    s = format(d, "f").rstrip("0").rstrip(".") if d is not None else ""
+                    if s:
+                        tokens.add(s)
+                elif v_bool is not None:
+                    tokens.add("true" if v_bool else "false")
+                if not tokens:
+                    continue
+                per_listing.setdefault(int(lid), set()).update(tokens)
+
+            counts: dict[str, int] = {}
+            for tokens in per_listing.values():
+                for tok in tokens:
+                    counts[tok] = counts.get(tok, 0) + 1
+            results[key] = sorted(counts.items(), key=lambda x: x[0])
+        return results
+
+
     async def count_by_owner(self, owner_id: int) -> int:
         stmt = select(func.count(Listing.id)).where(Listing.owner_id == owner_id)
         result = await self._session.execute(stmt)

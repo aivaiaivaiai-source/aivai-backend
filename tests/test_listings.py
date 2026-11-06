@@ -338,3 +338,29 @@ async def test_get_feed_rejects_inverted_year_range() -> None:
         await svc.get_feed(year_min=2020, year_max=2010)
     assert exc.value.status_code == 400
     listings.count_listings.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_get_feed_rejects_inverted_attr_numeric_range() -> None:
+    listings = AsyncMock()
+    svc = ListingService(
+        session=AsyncMock(),
+        listing_repository=listings,
+        category_repository=AsyncMock(),
+        notification_service=AsyncMock(),
+    )
+    with pytest.raises(AppException) as exc:
+        await svc.get_feed(
+            field_attrs={"area__min": "100", "area__max": "60"},
+        )
+    assert exc.value.status_code == 400
+    assert "area__min" in str(exc.value)
+    listings.count_listings.assert_not_called()
+
+
+def test_reject_inverted_field_ranges_allows_one_sided() -> None:
+    ListingService._reject_inverted_field_ranges({"area__min": "60"})
+    ListingService._reject_inverted_field_ranges({"area__max": "80"})
+    ListingService._reject_inverted_field_ranges(
+        {"area__min": "60", "area__max": "80"}
+    )

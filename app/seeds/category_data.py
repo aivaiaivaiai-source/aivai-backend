@@ -32,11 +32,9 @@ ROOT_CATEGORIES: list[tuple[str, str, CategoryEntityType, int]] = [
 ]
 
 SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
-    "real-estate": [
-        ("real-estate-sale", "Продажа", CategoryEntityType.object),
-        ("real-estate-rent", "Аренда", CategoryEntityType.object),
-        ("real-estate-commercial", "Коммерческая", CategoryEntityType.object),
-    ],
+    # Real Estate V2: property leaves come from mobile_category_skeleton + real_estate_v2.
+    # Legacy deal homes (sale/rent/commercial) are retired — do not re-seed as live SoT.
+    "real-estate": [],
     # Transport L2 comes from mobile_category_skeleton (v2 canonical slugs).
     # Legacy v1 slugs (transport-cars, …) are retired — see catalog_canonical_map_v1.json.
     "transport": [],
@@ -166,27 +164,10 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
         ("price", "Цена", _CORE.price, None),
         ("condition", "Состояние", _CORE.enum, None),
     ],
-    # --- real estate ---
-    "real-estate-sale": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("district", "Район", _CORE.string, "Какой район?"),
-        ("deal_type", "Сделка", _CORE.enum, "Продажа или аренда?"),
-        ("property_type", "Тип", _CORE.enum, "Квартира, дом или участок?"),
-        ("rooms", "Комнаты", _CORE.number, "Сколько комнат?"),
-        ("price", "Цена", _CORE.price, "Какая цена?"),
-    ],
-    "real-estate-rent": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("district", "Район", _CORE.string, "Какой район?"),
-        ("property_type", "Тип", _CORE.enum, "Квартира, дом, комната?"),
-        ("rooms", "Комнаты", _CORE.number, "Сколько комнат?"),
-        ("price", "Цена", _CORE.price, "Цена аренды?"),
-    ],
-    "real-estate-commercial": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("property_type", "Тип", _CORE.string, "Офис, склад, помещение?"),
-        ("price", "Цена", _CORE.price, "Какая цена?"),
-    ],
+    # --- real estate (legacy deal homes retired; SoT in app.seeds.real_estate_v2) ---
+    "real-estate-sale": [],
+    "real-estate-rent": [],
+    "real-estate-commercial": [],
     # --- jobs ---
     "jobs-vacancies": [
         ("city", "Город", _CORE.city, "В каком городе?"),
@@ -491,15 +472,9 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
 OPTIONAL_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType]]] = {
     # Optional EAV for car-sale retired — V2 core schema in car_sale_v2.
     "transport-car-sale": [],
-    "real-estate-sale": [
-        ("area", "Площадь", _CORE.decimal),
-        ("floor", "Этаж", _CORE.number),
-        ("total_floors", "Этажность", _CORE.number),
-    ],
-    "real-estate-rent": [
-        ("area", "Площадь", _CORE.decimal),
-        ("deposit", "Залог", _CORE.price),
-    ],
+    "real-estate-sale": [],
+    "real-estate-rent": [],
+    "real-estate-commercial": [],
     "electronics-phones": [
         ("memory", "Память", _CORE.string),
         ("battery_health", "АКБ", _CORE.string),
@@ -558,10 +533,27 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "transport-special-equipment": ["спецтехника"],
     "transport-moto-tech": ["мото", "мотоцикл", "скутер", "байк"],
     "transport-bicycles": ["велосипед", "велик", "велосипеды"],
-    # real estate
-    "real-estate-sale": ["квартира", "дом", "недвижимость", "участок", "продам квартиру"],
-    "real-estate-rent": ["аренда", "сдам", "снять квартиру", "арендую"],
-    "real-estate-commercial": ["офис", "склад", "коммерческая"],
+    # real estate V2 — aliases target canonical property leaves (see real_estate_v2.RE_ALIASES).
+    "real-estate-kvartiry": [
+        "квартира",
+        "продам квартиру",
+        "куплю квартиру",
+        "сдам квартиру",
+        "сниму квартиру",
+        "недвижимость",
+        "аренда",
+    ],
+    "real-estate-doma-i-kottedzhi": ["дом", "коттедж"],
+    "real-estate-zemelnye-uchastki": ["участок"],
+    "real-estate-komnaty": ["комната", "койко-место"],
+    "real-estate-kommercheskaya-nedvizhimost": [
+        "офис",
+        "склад",
+        "коммерческая",
+        "сдам бутик",
+    ],
+    "real-estate-garazhi": ["гараж"],
+    "real-estate-parkovki": ["парковка", "машиноместо"],
     # jobs
     "jobs-vacancies": ["вакансия", "работа", "ищу сотрудника", "требуется"],
     "jobs-resume": ["резюме", "ищу работу", "трудоустройство"],
@@ -893,11 +885,10 @@ MODERATION_RULES: list[tuple[str, str, str, ModerationAction, dict | None]] = [
 SEARCH_FILTERS: dict[str, list[tuple[str, str, CategoryFilterType]]] = {
     # Search SoT for car-sale: app.seeds.car_sale_v2 (loader overlay).
     "transport-car-sale": [],
-    "real-estate-sale": [
-        ("price", "Цена", CategoryFilterType.range),
-        ("rooms", "Комнаты", CategoryFilterType.range),
-        ("area", "Площадь", CategoryFilterType.range),
-    ],
+    # Real Estate Search filters: app.seeds.real_estate_v2 (loader overlay).
+    "real-estate-sale": [],
+    "real-estate-rent": [],
+    "real-estate-commercial": [],
     "electronics-phones": [
         ("price", "Цена", CategoryFilterType.range),
         ("brand", "Бренд", CategoryFilterType.select),

@@ -21,11 +21,30 @@ from app.schemas.media import MediaRead
 ListingFieldScalar = str | int | float | bool | dict[str, Any]
 
 
+class ListingFacetOptionCount(BaseModel):
+    """One controlled option count for a requested facet field."""
+
+    value: str
+    count: int = Field(ge=0)
+
+
 class ListingFeedPage(BaseModel):
-    """Paginated public feed — items + exact total for «Найдено N»."""
+    """Paginated public feed — items + exact total for «Найдено N».
+
+    Facets (optional, Package B+):
+    - Omitted when the client does not request ``facets``.
+    - Self-exclusion: each field facet is computed with all current filters
+      EXCEPT that field's own constraint (so selecting rooms=2 does not zero
+      other room options).
+    - Counts cover the full filtered active set (not the current page).
+    - Stable option values are identities; labels come from category metadata.
+    - ``_category`` facet groups by listing.category_id among category_ids.
+    """
 
     items: list["ListingRead"]
     total: int = Field(ge=0)
+    facets: dict[str, list[ListingFacetOptionCount]] | None = None
+
 
 
 def _ref_presentation(ref_id: int, related: Any) -> ListingFieldScalar:

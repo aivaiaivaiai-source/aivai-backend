@@ -103,6 +103,11 @@ def _is_rent_deal(deal_type: str | None) -> bool:
     if not deal_type:
         return False
     low = deal_type.strip().lower()
+    # Stable Real Estate V2 values first.
+    if low in {"rent", "want_rent", "rent_bed", "want_rent_bed"}:
+        return True
+    if low in {"sell", "buy"}:
+        return False
     return any(
         tok in low
         for tok in (
