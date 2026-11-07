@@ -27,7 +27,8 @@ class Listing(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    # Nullable: Services V2 may publish with «По договорённости» and no amount.
+    price: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     currency: Mapped[Currency] = mapped_column(
         SQLEnum(Currency, name="currency_enum"),
         nullable=False,

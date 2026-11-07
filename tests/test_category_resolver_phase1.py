@@ -227,7 +227,9 @@ async def test_engine_kamaz_sale_suggests_cargo() -> None:
 
 @pytest.mark.asyncio
 async def test_engine_service_transport_not_cargo_sale() -> None:
-    engine = CategoryResolverEngine(_routing_mock("services-transport"))
+    engine = CategoryResolverEngine(
+        _routing_mock("services-gruzoperevozki-i-pereezdy")
+    )
     out = await engine.resolve(
         raw_intent_text="Предлагаю грузоперевозки",
         catalog=_catalog(),

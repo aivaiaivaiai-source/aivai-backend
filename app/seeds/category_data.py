@@ -557,29 +557,38 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     # jobs
     "jobs-vacancies": ["вакансия", "работа", "ищу сотрудника", "требуется"],
     "jobs-resume": ["резюме", "ищу работу", "трудоустройство"],
-    # services
-    "services-transport": [
+    # services V2 — aliases target canonical leaves (legacy 7 retired).
+    "services-gruzoperevozki-i-pereezdy": [
         "перевозка",
-        "доставка",
-        # bare «эвакуатор» → Auto Services towing (Auto Services V2)
         "грузоперевозки",
         "привезти",
         "щебень",
         "песок",
         "чернозем",
     ],
-    "services-repair": [
+    "services-kurerskie-uslugi": ["доставка"],
+    "services-remont-tehniki": [
         "ремонт телефона",
         "ремонт айфона",
         "ремонт iphone",
         "ремонт ноутбука",
         "ремонт стиральной",
     ],
-    "services-beauty": ["маникюр", "педикюр", "наращивание", "стрижка", "брови", "ресницы"],
-    "services-cleaning": ["уборка", "клининг", "химчистка"],
-    "services-tutoring": ["репетитор", "обучение", "курсы"],
-    "services-legal": ["юрист", "адвокат", "нотариус"],
-    "services-it": ["разработка сайта", "smm", "таргет", "дизайн"],
+    "services-uslugi-krasoty-i-stilya": [
+        "маникюр",
+        "педикюр",
+        "наращивание",
+        "стрижка",
+        "брови",
+        "ресницы",
+    ],
+    "services-uborka-i-klining": ["уборка", "клининг", "химчистка"],
+    "services-obuchenie-i-repetitorstvo": ["репетитор", "обучение", "курсы"],
+    "services-yuridicheskie-uslugi": ["юрист", "адвокат", "нотариус"],
+    "services-kompyutery-i-it-uslugi": ["разработка сайта"],
+    "services-reklama-i-marketing": ["smm", "таргет"],
+    "services-uslugi-dizayna-i-proektirovaniya": ["дизайн"],
+    "services-rieltorskie-uslugi": ["риелтор", "риэлтор"],
     # repair construction
     "repair-building": ["ремонт квартиры", "отделка", "штукатурка", "плитка"],
     "construction-work": ["строительство", "фундамент", "кровля", "забор"],
@@ -719,8 +728,8 @@ ROUTING_RULES: list[tuple[str, str, str, dict]] = [
     (
         "kamaz_delivery_sand_gravel",
         r"камаз.*(привез|достав|перевоз|щебен|песок|чернозем|чернозём)",
-        "KAMAZ delivery → services-transport",
-        {"target_category_slug": "services-transport"},
+        "KAMAZ delivery → services-gruzoperevozki-i-pereezdy",
+        {"target_category_slug": "services-gruzoperevozki-i-pereezdy"},
     ),
     (
         "kamaz_sale",
@@ -744,7 +753,7 @@ ROUTING_RULES: list[tuple[str, str, str, dict]] = [
         "iphone_repair_service",
         r"ремонт.*(айфон|iphone|телефон|смартфон)",
         "phone repair service",
-        {"target_category_slug": "services-repair"},
+        {"target_category_slug": "services-remont-tehniki"},
     ),
     (
         "sell_iphone",
@@ -756,7 +765,7 @@ ROUTING_RULES: list[tuple[str, str, str, dict]] = [
         "manicure_service",
         r"(делаю|оказываю|маникюр|педикюр|наращивание ногт)",
         "beauty service",
-        {"target_category_slug": "services-beauty"},
+        {"target_category_slug": "services-uslugi-krasoty-i-stilya"},
     ),
     (
         "sell_gel_polish",

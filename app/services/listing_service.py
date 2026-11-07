@@ -103,6 +103,32 @@ class ListingService:
             return
         raise AppException(PUBLISH_BLOCKED_NO_PHOTO, status_code=400)
 
+    @staticmethod
+    def _validate_price_contract(
+        *,
+        category_slug: str | None,
+        price: Decimal | None,
+        fields: dict[str, Any] | None,
+    ) -> None:
+        """Services: numeric «Цена от» XOR «По договорённости». Others need price."""
+        from app.seeds.services_v2 import SERVICES_NEGOTIATED_VALUE
+
+        slug = (category_slug or "").strip()
+        negotiated = (
+            str((fields or {}).get("negotiable") or "").strip()
+            == SERVICES_NEGOTIATED_VALUE
+        )
+        has_price = price is not None and Decimal(price) > 0
+        if slug.startswith("services-") or slug == "services":
+            if has_price or negotiated:
+                return
+            raise AppException(
+                "Укажите «Цена от» или «По договорённости».",
+                status_code=400,
+            )
+        if price is None:
+            raise AppException("price is required", status_code=400)
+
     async def _attach_placeholder_image(self, listing_id: int) -> None:
         from datetime import UTC, datetime
 
@@ -177,6 +203,11 @@ class ListingService:
                 category_slug=category_slug,
                 images=None,
                 uses_placeholder=uses_placeholder,
+            )
+            self._validate_price_contract(
+                category_slug=category_slug,
+                price=data.price,
+                fields=data.fields,
             )
 
         listing = Listing(
@@ -451,6 +482,14 @@ class ListingService:
                 images=list(listing.images or []),
                 uses_placeholder=listing.uses_placeholder_image,
             )
+            field_map = serialize_listing_fields(
+                list(getattr(listing, "field_values", None) or [])
+            )
+            self._validate_price_contract(
+                category_slug=category_slug,
+                price=listing.price,
+                fields=field_map,
+            )
             from app.services.media_category_processing import (
                 enqueue_category_aware_media_for_listing,
             )
@@ -462,9 +501,10 @@ class ListingService:
 
         # Currency V2: capture snapshot only on first activation (no snapshot yet).
         # Deactivate→reactivate without price/currency change must NOT refresh.
+        # Negotiated Services (price null) may refresh snapshot once; normalized stays null.
         if target == ListingStatus.active and (
             listing.exchange_rate_snapshot is None
-            or listing.normalized_price_kgs is None
+            or (listing.price is not None and listing.normalized_price_kgs is None)
         ):
             await self._capture_fx_snapshot(listing)
 

@@ -128,6 +128,10 @@ def apply_listing_fx_snapshot(
     """Set snapshot + normalized from trusted rate (publication / price edit)."""
     snapshot = validate_rate(rate)
     listing.exchange_rate_snapshot = snapshot
+    if listing.price is None:
+        # Services «По договорённости» — no amount to normalize.
+        listing.normalized_price_kgs = None
+        return
     listing.normalized_price_kgs = compute_normalized_price_kgs(
         price=listing.price,
         currency=listing.currency,

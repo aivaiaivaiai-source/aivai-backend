@@ -94,7 +94,8 @@ def serialize_listing_fields(rows: list[Any]) -> dict[str, ListingFieldScalar]:
 class ListingCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=MAX_LISTING_DESCRIPTION_LENGTH)
-    price: Decimal = Field(..., ge=0)
+    # Null allowed for Services «По договорённости» (and incomplete drafts).
+    price: Decimal | None = Field(default=None, ge=0)
     # Null = unknown category (draft + early photo upload). Required for active.
     category_id: int | None = Field(default=None, ge=1)
     currency: Currency = Currency.KGS
@@ -210,7 +211,7 @@ class ListingRead(BaseModel):
     id: int
     title: str
     description: str | None
-    price: Decimal
+    price: Decimal | None
     currency: Currency
     # Currency V2: publication/repricing FX snapshot (USD→KGS). Client formats cards.
     exchange_rate_snapshot: Decimal | None = None

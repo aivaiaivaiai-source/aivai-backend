@@ -95,6 +95,7 @@ from app.seeds.jobs_create_fields import (
     JOBS_V2_RETIRED_LEGACY_SLUGS,
 )
 from app.seeds.real_estate_v2 import RETIRED_REAL_ESTATE_SLUGS
+from app.seeds.services_v2 import SERVICES_V2_RETIRED_SLUGS
 from app.services.category_text import normalize_alias_keys
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,7 @@ _RETIRED_CATEGORY_SLUGS: frozenset[str] = (
     | RETIRE_LEAF_SLUGS
     | RETIRED_HOME_GARDEN_LEGACY_SLUGS
     | RETIRED_REAL_ESTATE_SLUGS
+    | SERVICES_V2_RETIRED_SLUGS
 )
 
 # Alias/model nicknames must never be VehicleBrand.slug.
@@ -529,6 +531,9 @@ class CategorySeedLoader:
                 )
             ):
                 continue
+            # Services V2 Package A overlay owns services-* Create SoT.
+            if cat_slug == "services" or str(cat_slug).startswith("services-"):
+                continue
             cat_id = self._slug_to_id.get(cat_slug)
             if cat_id is None:
                 continue
@@ -614,6 +619,7 @@ class CategorySeedLoader:
         await self._seed_tuning_accessories_v2_fields()
         await self._seed_auto_services_v2_fields()
         await self._seed_real_estate_v2_fields()
+        await self._seed_services_v2_fields()
         for cat_slug, fields in OPTIONAL_FIELDS.items():
             if cat_slug in _RETIRED_CATEGORY_SLUGS:
                 continue
@@ -3941,9 +3947,193 @@ class CategorySeedLoader:
             row.field_type = ftype
             row.sort_order = sort_order
 
+    async def _seed_services_v2_fields(self) -> None:
+        """Services V2 — canonical L2 + Create SoT + Search filters; retire dual tree."""
+        from sqlalchemy import func
+
+        from app.models.listing import Listing
+        from app.seeds.services_v2 import (
+            SERVICES_ROOT_LABEL,
+            SERVICES_ROOT_SLUG,
+            SERVICES_V2_ALIAS_REMAP,
+            SERVICES_V2_CANONICAL_LEAVES,
+            SERVICES_V2_CANONICAL_SLUGS,
+            SERVICES_V2_ENTITY_TYPE,
+            SERVICES_V2_RETIRED_SLUGS,
+            build_services_v2_core_fields,
+            build_services_v2_search_filters,
+        )
+
+        root_id = self._slug_to_id.get(SERVICES_ROOT_SLUG)
+        if root_id is None:
+            return
+        root = (
+            await self._session.execute(
+                select(Category).where(Category.id == root_id)
+            )
+        ).scalar_one_or_none()
+        if root is None:
+            return
+        root.name = SERVICES_ROOT_LABEL
+        root.is_active = True
+        await self._clear_picker_parent_live_sot(root_id)
+
+        for slug, label, sort_order in SERVICES_V2_CANONICAL_LEAVES:
+            row = (
+                await self._session.execute(
+                    select(Category).where(Category.slug == slug)
+                )
+            ).scalar_one_or_none()
+            if row is None:
+                row = Category(
+                    parent_id=root_id,
+                    slug=slug,
+                    name=label,
+                    entity_type=SERVICES_V2_ENTITY_TYPE,
+                    is_active=True,
+                    sort_order=sort_order,
+                    requires_city=True,
+                )
+                self._session.add(row)
+                await self._session.flush()
+            else:
+                row.parent_id = root_id
+                row.name = label
+                row.entity_type = SERVICES_V2_ENTITY_TYPE
+                row.is_active = True
+                row.sort_order = sort_order
+                row.requires_city = True
+            self._slug_to_id[slug] = row.id
+
+        await self._session.flush()
+
+        # Retire merged/legacy/out-of-scope Services nodes.
+        for slug in sorted(SERVICES_V2_RETIRED_SLUGS):
+            row = (
+                await self._session.execute(
+                    select(Category).where(Category.slug == slug)
+                )
+            ).scalar_one_or_none()
+            if row is None:
+                continue
+            self._slug_to_id[slug] = row.id
+            if row.is_active:
+                row.is_active = False
+            listing_count = await self._session.scalar(
+                select(func.count())
+                .select_from(Listing)
+                .where(Listing.category_id == row.id)
+            )
+            # Preserve schema only when historical listings/drafts remain.
+            if int(listing_count or 0) == 0:
+                await self._clear_picker_parent_live_sot(row.id)
+
+        # Any unexpected active Services L2 outside canonical → deactivate.
+        children = (
+            await self._session.execute(
+                select(Category).where(Category.parent_id == root_id)
+            )
+        ).scalars().all()
+        for ch in children:
+            if ch.slug in SERVICES_V2_CANONICAL_SLUGS:
+                continue
+            if ch.is_active:
+                ch.is_active = False
+            listing_count = await self._session.scalar(
+                select(func.count())
+                .select_from(Listing)
+                .where(Listing.category_id == ch.id)
+            )
+            if int(listing_count or 0) == 0:
+                await self._clear_picker_parent_live_sot(ch.id)
+
+        core_by_slug = build_services_v2_core_fields()
+        filters_by_slug = build_services_v2_search_filters()
+        for slug, fields in core_by_slug.items():
+            cat_id = self._slug_to_id.get(slug)
+            if cat_id is None:
+                continue
+            for model_cls in (
+                CategoryCoreField,
+                CategoryOptionalField,
+                CategoryFilter,
+            ):
+                existing = (
+                    await self._session.execute(
+                        select(model_cls).where(model_cls.category_id == cat_id)
+                    )
+                ).scalars().all()
+                for row in existing:
+                    await self._session.delete(row)
+            await self._session.flush()
+            for field in fields:
+                key, label, ftype, required, sort, options, hint = field
+                if key in {"city", "title", "description", "photos", "region"}:
+                    continue
+                await self._upsert_core_field(
+                    cat_id,
+                    key,
+                    label,
+                    ftype,
+                    sort,
+                    hint,
+                    required=required,
+                    options=options,
+                )
+            for key, label, ftype, sort, config in filters_by_slug.get(slug, []):
+                self._session.add(
+                    CategoryFilter(
+                        category_id=cat_id,
+                        filter_key=key,
+                        label=label,
+                        filter_type=ftype,
+                        sort_order=sort,
+                        config=config,
+                        search_intent="",
+                    )
+                )
+
+        async def _upsert_alias(alias: str, target_slug: str, *, weight: int = 120) -> None:
+            target_id = self._slug_to_id.get(target_slug)
+            if target_id is None:
+                return
+            existing = (
+                await self._session.execute(
+                    select(CategoryAlias).where(
+                        CategoryAlias.alias_normalized == alias,
+                        CategoryAlias.locale == self._locale,
+                    )
+                )
+            ).scalar_one_or_none()
+            if existing is None:
+                self._session.add(
+                    CategoryAlias(
+                        category_id=target_id,
+                        alias=alias,
+                        alias_normalized=alias,
+                        alias_compact=alias.replace(" ", ""),
+                        locale=self._locale,
+                        weight=weight,
+                        is_enabled=True,
+                    )
+                )
+            else:
+                existing.category_id = target_id
+                existing.alias = alias
+                existing.is_enabled = True
+                existing.weight = weight
+
+        for alias, target in SERVICES_V2_ALIAS_REMAP.items():
+            await _upsert_alias(alias, target)
+
+        await self._session.flush()
+
     async def _seed_filters(self) -> None:
         for cat_slug, filters in SEARCH_FILTERS.items():
             if cat_slug in _RETIRED_CATEGORY_SLUGS:
+                continue
+            if cat_slug == "services" or str(cat_slug).startswith("services-"):
+                # Services Search filters deferred to Package B.
                 continue
             if cat_slug == "transport-car-sale":
                 continue
