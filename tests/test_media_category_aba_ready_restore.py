@@ -57,6 +57,9 @@ async def test_requeue_aba_restores_ready_when_prior_category_job_succeeded(
         async def list_for_media(self, media_id):
             return [succeeded]
 
+        async def supersede_actionable_except(self, *a, **k):
+            return 0
+
     class _JobSvc:
         def __init__(self, *a, **k):
             pass
@@ -74,6 +77,10 @@ async def test_requeue_aba_restores_ready_when_prior_category_job_succeeded(
         lambda s: _JobRepo(),
     )
     monkeypatch.setattr("app.media_queue.job_service.MediaJobService", _JobSvc)
+    monkeypatch.setattr(
+        "app.services.media_category_processing._category_slug",
+        AsyncMock(return_value="transport-farm-machinery-traktory"),
+    )
 
     # Simulate demotion path: ready media, switch back to previously processed cat.
     media.lifecycle_status = MediaLifecycleStatus.ready
@@ -119,6 +126,12 @@ async def test_heal_restores_stuck_queued_after_aba(monkeypatch) -> None:
     class _JobRepo:
         async def get_by_idempotency_key(self, k):
             return succeeded if k == key else None
+
+        async def list_for_media(self, media_id):
+            return [succeeded]
+
+        async def supersede_actionable_except(self, *a, **k):
+            return 0
 
     monkeypatch.setattr(
         "app.services.media_category_processing.ListingRepository",

@@ -56,8 +56,8 @@ def _section(
 
 REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
     "materials": _section(
-        "repair-stroitelnye-materialy",
-        "Строительные материалы",
+        "repair-construction-stroitelnye-materialy",
+        "ЖБИ, сетки и плёнки",
         (
             "Железобетонные изделия",
             "Сетки строительные",
@@ -68,7 +68,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(base=True), _condition()],
     ),
     "bricks": _section(
-        "repair-kirpichi-i-bloki",
+        "repair-construction-kirpichi-i-stroitelnye-bloki",
         "Кирпичи и строительные блоки",
         (
             "Кирпич",
@@ -81,7 +81,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(base=True), _condition()],
     ),
     "mixes": _section(
-        "repair-tsement-smesi",
+        "repair-construction-tsement-smesi-sypuchie-materialy",
         "Цемент/смеси/сыпучие материалы",
         (
             "Цемент",
@@ -98,7 +98,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "lumber": _section(
-        "repair-pilomaterialy",
+        "repair-construction-pilomaterialy",
         "Пиломатериалы",
         (
             "Доска",
@@ -115,7 +115,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "metal": _section(
-        "repair-metalloprokat",
+        "repair-construction-metalloprokat",
         "Металлопрокат",
         (
             "Арматура",
@@ -127,7 +127,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(base=True), _condition()],
     ),
     "roof": _section(
-        "repair-krovlya",
+        "repair-construction-krovlya-i-vodostoki",
         "Кровля и водостоки",
         (
             "Металлочерепица",
@@ -140,7 +140,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "facade": _section(
-        "repair-fasady",
+        "repair-construction-fasady-i-uteplenie",
         "Фасады и утепление",
         (
             "Сайдинг",
@@ -156,7 +156,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "windows": _section(
-        "repair-okna-i-dveri",
+        "repair-construction-okna-i-dveri",
         "Окна и двери",
         (
             "Окна ПВХ",
@@ -178,7 +178,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "floors": _section(
-        "repair-napolnye-pokrytiya",
+        "repair-construction-napolnye-pokrytiya",
         "Напольные покрытия",
         (
             "Ламинат",
@@ -195,8 +195,8 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "walls": _section(
-        "repair-stenovye-materialy",
-        "Стеновые материалы/покрытия",
+        "repair-construction-stenovye-materialy-pokrytiya",
+        "Стеновые материалы",
         (
             "Гипсокартон",
             "Обои",
@@ -207,10 +207,11 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "ceilings": _section(
-        "repair-potolki",
+        "repair-construction-potolki-i-potolochnye-sistemy",
         "Потолки и потолочные системы",
         (
-            "Натяжные потолки",
+            # Display clarifies goods (materials/systems), not installation service.
+            "Материалы для натяжных потолков",
             "Подвесные потолки",
             "Потолочная плитка",
             "Галтели",
@@ -219,7 +220,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "tile": _section(
-        "repair-plitka",
+        "repair-construction-plitka-i-keramogranit",
         "Плитка и керамогранит",
         (
             "Настенная плитка",
@@ -232,8 +233,8 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "paint": _section(
-        "repair-lakokrasochnye",
-        "Лакокрасочные материалы",
+        "repair-construction-lakokrasochnye-materialy",
+        "Краски и лаки",
         (
             "Интерьерные краски",
             "Фасадные краски",
@@ -249,7 +250,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "chemistry": _section(
-        "repair-klei-i-himiya",
+        "repair-construction-klei-i-stroitelnaya-himiya",
         "Клеи и строительная химия",
         (
             "Плиточный клей",
@@ -263,8 +264,8 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _group("Упаковка", ("Запечатано", "Вскрыто"))],
     ),
     "finishing": _section(
-        "repair-otdelochnye",
-        "Отделочные материалы",
+        "repair-construction-otdelochnye-materialy",
+        "Плинтусы и декор",
         (
             "Плинтусы",
             "Молдинги и уголки",
@@ -275,7 +276,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "plumbing": _section(
-        "repair-santehnika",
+        "repair-construction-santehnika-i-vodosnabzhenie",
         "Сантехника и водоснабжение",
         (
             "Трубы и фитинги",
@@ -290,7 +291,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "electrical": _section(
-        "repair-elektrika",
+        "repair-construction-elektrika-i-osveschenie",
         "Электрика и освещение",
         (
             "Кабель и провод",
@@ -307,7 +308,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "climate": _section(
-        "repair-otoplenie-i-klimat",
+        "repair-construction-otoplenie-ventilyatsiya-i-klimat",
         "Отопление, вентиляция и климат",
         (
             "Котлы отопления",
@@ -319,7 +320,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "hand-tools": _section(
-        "repair-instrumenty",
+        "repair-construction-instrumenty",
         "Инструменты",
         (
             "Молотки и кувалды",
@@ -332,7 +333,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "power-tools": _section(
-        "repair-elektroinstrumenty",
+        "repair-construction-elektroinstrumenty",
         "Электроинструменты",
         (
             "Дрели и шуруповёрты",
@@ -349,7 +350,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "ppe": _section(
-        "repair-spetsodezhda",
+        "repair-construction-spetsodezhda-i-sredstva-zaschity",
         "Спецодежда и средства защиты",
         (
             "Рабочие костюмы",
@@ -368,7 +369,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "equipment": _section(
-        "repair-oborudovanie",
+        "repair-construction-stroitelnoe-oborudovanie",
         "Строительное оборудование",
         (
             "Бетономешалки",
@@ -385,7 +386,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "scaffolding": _section(
-        "repair-lestnitsy-i-lesa",
+        "repair-construction-lestnitsy-i-stroitelnye-lesa",
         "Лестницы и строительные леса",
         (
             "Строительные леса",
@@ -397,7 +398,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "fences": _section(
-        "repair-zabory",
+        "repair-construction-zabory-vorota-i-ograzhdeniya",
         "Заборы, ворота и ограждения",
         (
             "Сетка-рабица",
@@ -409,7 +410,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "structures": _section(
-        "repair-navesy",
+        "repair-construction-navesy-i-metallokonstruktsii",
         "Навесы и металлоконструкции",
         (
             "Металлические каркасы",
@@ -421,7 +422,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "forged": _section(
-        "repair-kovanye",
+        "repair-construction-kovanye-izdeliya",
         "Кованые изделия",
         (
             "Кованые решётки",
@@ -432,8 +433,8 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "fasteners": _section(
-        "repair-krepezh",
-        "Крепеж и расходные материалы",
+        "repair-construction-krepezh-i-rashodnye-materialy",
+        "Крепёж и расходные материалы",
         (
             "Саморезы и шурупы",
             "Гвозди и дюбели",
@@ -445,7 +446,7 @@ REPAIR_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _group("Фасовка", ("Штучно", "Упаковка"))],
     ),
     "other": _section(
-        "repair-prochee",
+        "repair-construction-prochee-dlya-remonta-stroitelstva",
         "Прочее для ремонта/строительства",
         (
             "Бытовки",

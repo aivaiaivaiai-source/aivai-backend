@@ -51,11 +51,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
         ("services-legal", "Юридические услуги", CategoryEntityType.service),
         ("services-it", "IT и digital", CategoryEntityType.service),
     ],
-    "repair-construction": [
-        ("repair-building", "Ремонт помещений", CategoryEntityType.construction),
-        ("construction-work", "Строительные работы", CategoryEntityType.construction),
-        ("repair-tools", "Инструменты и оборудование", CategoryEntityType.construction),
-    ],
+    # Repair V2: goods L2 from mobile_category_skeleton + repair_v2 overlay.
+    # Legacy service-like L2 (repair-building / construction-work / repair-tools) retired.
+    "repair-construction": [],
     "electronics": [
         ("electronics-phones", "Телефоны", CategoryEntityType.object),
         ("electronics-computers", "Компьютеры", CategoryEntityType.object),
@@ -589,10 +587,20 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "services-reklama-i-marketing": ["smm", "таргет"],
     "services-uslugi-dizayna-i-proektirovaniya": ["дизайн"],
     "services-rieltorskie-uslugi": ["риелтор", "риэлтор"],
-    # repair construction
-    "repair-building": ["ремонт квартиры", "отделка", "штукатурка", "плитка"],
-    "construction-work": ["строительство", "фундамент", "кровля", "забор"],
-    "repair-tools": ["перфоратор", "болгарка", "стройинструмент"],
+    # repair construction V2 — goods words → goods leaves; work phrases → Services.
+    "repair-construction-plitka-i-keramogranit": ["плитка"],
+    "repair-construction-krovlya-i-vodostoki": ["кровля"],
+    "repair-construction-zabory-vorota-i-ograzhdeniya": ["забор"],
+    "repair-construction-elektroinstrumenty": ["перфоратор", "болгарка"],
+    "repair-construction-instrumenty": ["стройинструмент"],
+    "services-stroitelnye-i-remontnye-uslugi": [
+        "ремонт квартиры",
+        "строительные работы",
+        "отделка",
+        "строительство",
+        "фундамент",
+        "штукатурка",
+    ],
     # electronics
     "electronics-phones": ["телефон", "айфон", "iphone", "смартфон", "android"],
     "electronics-computers": ["ноутбук", "компьютер", "пк", "macbook"],

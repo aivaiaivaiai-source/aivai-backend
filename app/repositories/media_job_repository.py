@@ -28,6 +28,36 @@ class MediaJobRepository(BaseRepository[MediaJob]):
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
+    async def supersede_actionable_except(
+        self,
+        media_id: int,
+        *,
+        keep_idempotency_key: str | None,
+        error_code: str = "SUPERSEDED",
+        message: str = "Superseded by newer category context",
+    ) -> int:
+        """Mark other queued/failed jobs for this media as dead (non-actionable).
+
+        Leased jobs are left alone (in-flight); worker ACK path handles dead.
+        Succeeded jobs are retained for A→B→A restore.
+        """
+        now = datetime.now(UTC)
+        jobs = await self.list_for_media(media_id)
+        superseded = 0
+        for job in jobs:
+            if keep_idempotency_key and job.idempotency_key == keep_idempotency_key:
+                continue
+            if job.status not in (MediaJobStatus.queued, MediaJobStatus.failed):
+                continue
+            job.status = MediaJobStatus.dead
+            job.completed_at = now
+            job.lease_owner = None
+            job.lease_until = None
+            job.last_error_code = error_code
+            job.last_error_message = message[:512]
+            superseded += 1
+        return superseded
+
     async def get_by_id_for_update(self, job_id: int) -> MediaJob | None:
         stmt = (
             select(MediaJob)
