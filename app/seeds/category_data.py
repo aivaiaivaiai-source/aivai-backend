@@ -54,12 +54,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
     # Repair V2: goods L2 from mobile_category_skeleton + repair_v2 overlay.
     # Legacy service-like L2 (repair-building / construction-work / repair-tools) retired.
     "repair-construction": [],
-    "electronics": [
-        ("electronics-phones", "Телефоны", CategoryEntityType.object),
-        ("electronics-computers", "Компьютеры", CategoryEntityType.object),
-        ("electronics-appliances", "Бытовая техника", CategoryEntityType.object),
-        ("electronics-tv", "ТВ и аудио", CategoryEntityType.object),
-    ],
+    # Electronics V2: goods L2 from mobile_category_skeleton + electronics_v2.
+    # Legacy coarse L2 (phones/computers/appliances/tv) retired.
+    "electronics": [],
     "business-equipment": [
         ("business-equipment-cafe", "Кафе и ресторан", CategoryEntityType.equipment),
         ("business-equipment-retail", "Торговое оборудование", CategoryEntityType.equipment),

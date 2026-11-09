@@ -1,0 +1,34 @@
+[
+  {
+    "kind_scope": "Смартфоны/Apple",
+    "authority": "Apple Support Identify your iPhone model (support.apple.com/en-us/108044); apple.com/iphone; iOS 27 compatible models list",
+    "checked": "2026-11-08"
+  },
+  {
+    "kind_scope": "Смартфоны/Samsung",
+    "authority": "Samsung official smartphone pages (AU/US/UK) + regional general catalog PDF 2025-07",
+    "checked": "2026-11-08"
+  },
+  {
+    "kind_scope": "Смартфоны/Xiaomi+Redmi+POCO",
+    "authority": "mi.com/global/mobile official product list",
+    "checked": "2026-11-08",
+    "architecture": "Brand=Xiaomi; Redmi/POCO as model labels (Package A SoT preserved)"
+  },
+  {
+    "kind_scope": "Планшеты/Apple",
+    "authority": "Apple Support Identify your iPad; apple.com/ipad/compare",
+    "checked": "2026-11-08"
+  },
+  {
+    "kind_scope": "Ноутбуки/Apple",
+    "authority": "Apple Support MacBook Air/Pro identify; apple.com/mac/compare",
+    "checked": "2026-11-08",
+    "rule": "Size+chip generation is model; RAM/SSD are separate fields"
+  },
+  {
+    "kind_scope": "Бытовая техника",
+    "authority": "Manufacturer family lines (Samsung/LG/Bosch/Haier/Artel/Xiaomi/Roborock) — FAMILY depth",
+    "checked": "2026-11-08"
+  }
+]
