@@ -114,26 +114,53 @@ def test_skeleton_includes_final_l3_l4() -> None:
     assert target.issubset(mobile)
 
 
+_GOODS_BASE = {"seller_type", "price", "negotiable", "contact_methods"}
+
+
 def test_dependent_filters_sofa_vs_mower_vs_seeds() -> None:
     sofa = {f[0] for f in fields_for_leaf("home-garden-mebel-dlya-doma-divany")}
-    assert "foldable" in sofa
-    assert "condition" in sofa
+    assert sofa == {"condition", "foldable"} | _GOODS_BASE
+    assert "width_cm" not in sofa
+    assert "material" not in sofa
     assert "power" not in sofa
     assert "city" not in sofa
-    assert "price" not in sofa
 
     mower = {f[0] for f in fields_for_leaf("home-garden-sadovaya-tehnika-gazonokosilki")}
-    assert "brand" in mower
-    assert "power_type" in mower
+    assert mower == {
+        "condition",
+        "power_type",
+        "self_propelled",
+    } | _GOODS_BASE
+    assert "brand" not in mower
+    assert "power" not in mower
+    assert "cutting_width" not in mower
     assert "foldable" not in mower
 
+    trimmer = {
+        f[0]
+        for f in fields_for_leaf("home-garden-sadovaya-tehnika-trimmery-i-motokosy")
+    }
+    assert trimmer == {"condition", "power_type"} | _GOODS_BASE
+    assert "brand" not in trimmer
+
+    chainsaw = {
+        f[0]
+        for f in fields_for_leaf(
+            "home-garden-sadovaya-tehnika-benzopily-i-elektropily"
+        )
+    }
+    assert chainsaw == {"condition", "power_type"} | _GOODS_BASE
+    assert "brand" not in chainsaw
+    assert "bar_length" not in chainsaw
+
     seeds = {f[0] for f in fields_for_leaf("home-garden-semena-i-posadochnyy-material-semena-ovoschey")}
+    assert seeds == _GOODS_BASE
+    assert "plant_name" not in seeds
     assert "condition" not in seeds
-    assert "plant_name" in seeds
     assert "power" not in seeds
 
     shovel = {f[0] for f in fields_for_leaf("home-garden-sadovyy-inventar-lopaty")}
-    assert shovel == {"condition"}
+    assert shovel == {"condition"} | _GOODS_BASE
 
 
 def test_pool_vs_pump_filters() -> None:
@@ -142,9 +169,12 @@ def test_pool_vs_pump_filters() -> None:
         f[0]
         for f in fields_for_leaf("home-garden-basseyny-i-tovary-dlya-otdyha-filtry-i-nasosy-dlya-basseynov")
     }
-    assert "length_or_diameter" in pool
-    assert "length_or_diameter" not in pump
-    assert "throughput" in pump
+    assert pool == {"condition", "length_or_diameter"} | _GOODS_BASE
+    assert "width_cm" not in pool
+    assert "volume" not in pool
+    assert pump == {"condition"} | _GOODS_BASE
+    assert "throughput" not in pump
+    assert "brand" not in pump
 
 
 def test_forbidden_names_absent() -> None:

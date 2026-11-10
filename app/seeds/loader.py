@@ -449,14 +449,13 @@ class CategorySeedLoader:
 
     async def _seed_fields(self) -> None:
         from app.models.job_create_intent import HIRING, JOB_SEEKING
-        from app.seeds.home_garden_filters import build_home_garden_core_fields
         from app.seeds.jobs_create_fields import build_jobs_create_core_fields
         from app.seeds.jobs_seeking_fields import build_jobs_seeking_core_fields
 
         merged: dict = dict(CORE_FIELDS)
-        for slug, fields in build_home_garden_core_fields().items():
-            # Convert FieldDef → legacy 4-tuple + store extended meta separately
-            merged[slug] = fields
+        # Home & Garden Package A: Create cores (incl. price/seller/contacts)
+        # are seeded by `_seed_home_garden_package_a_fields` — not this merge
+        # (generic merge historically skipped `price` for goods).
         # Jobs create: strip jobs-* from unscoped merge — seeded with create_intent below.
         jobs_hiring = build_jobs_create_core_fields()
         jobs_seeking = build_jobs_seeking_core_fields()
@@ -465,6 +464,8 @@ class CategorySeedLoader:
             if cat_slug in _RETIRED_CATEGORY_SLUGS:
                 continue
             if str(cat_slug).startswith("jobs-"):
+                continue
+            if str(cat_slug).startswith("home-garden") or cat_slug == "home-garden":
                 continue
             # Bus V2 leaf/parent SoT: bus_sale_v2 overlay (not thin CORE_FIELDS).
             if cat_slug in {
@@ -613,6 +614,7 @@ class CategorySeedLoader:
                     options=options,
                     create_intent=JOB_SEEKING,
                 )
+        await self._seed_home_garden_package_a_fields()
         await self._seed_home_garden_search_filters()
         await self._seed_car_sale_v2_fields()
         await self._seed_moto_sale_v2_fields()
@@ -3807,6 +3809,47 @@ class CategorySeedLoader:
                         config=config,
                     )
                 )
+
+    async def _seed_home_garden_package_a_fields(self) -> None:
+        """Home & Garden V2 Package A — leaf Create cores including goods base.
+
+        Replaces core fields for every FINAL publishable leaf so seller / price /
+        negotiable / contact_methods are Backend SoT (Flutter profile cutover).
+        Search filters remain in `_seed_home_garden_search_filters` (Package B
+        still owns Search UX).
+        """
+        from app.seeds.home_garden_filters import build_home_garden_core_fields
+
+        core_by_slug = build_home_garden_core_fields()
+        for slug, fields in core_by_slug.items():
+            cat_id = self._slug_to_id.get(slug)
+            if cat_id is None:
+                continue
+            existing = (
+                await self._session.execute(
+                    select(CategoryCoreField).where(
+                        CategoryCoreField.category_id == cat_id
+                    )
+                )
+            ).scalars().all()
+            for row in existing:
+                await self._session.delete(row)
+            await self._session.flush()
+            for sort_i, field in enumerate(fields):
+                key, label, ftype, required, options, hint = field
+                if key in {"city", "title", "description", "photos", "region"}:
+                    continue
+                await self._upsert_core_field(
+                    cat_id,
+                    key,
+                    label,
+                    ftype,
+                    sort_i,
+                    hint,
+                    required=required,
+                    options=options if options else None,
+                )
+        await self._session.flush()
 
     async def _seed_home_garden_search_filters(self) -> None:
         from app.models.category_enums import CategoryFilterType

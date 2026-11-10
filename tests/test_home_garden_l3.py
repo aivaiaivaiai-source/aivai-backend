@@ -6,8 +6,13 @@ from app.seeds.home_garden_l3 import HOME_GARDEN_L3_SKELETON, _HOME_GARDEN_L3
 from app.seeds.mobile_category_skeleton import MOBILE_CATEGORY_SKELETON
 
 
-def test_home_garden_l3_covers_all_l2_except_prochee() -> None:
-    l2 = set(HOME_GARDEN_L2_SLUGS) - {"home-garden-prochee-dlya-doma-i-sada"}
+def test_home_garden_l3_covers_all_l2_except_direct_leaves() -> None:
+    # Direct L2 publishable leaves have no nested L3 map entries.
+    direct_leaf_l2 = {
+        "home-garden-prochee-dlya-doma-i-sada",
+        "home-garden-gazovye-ballony",
+    }
+    l2 = set(HOME_GARDEN_L2_SLUGS) - direct_leaf_l2
     assert set(_HOME_GARDEN_L3) == l2
 
 

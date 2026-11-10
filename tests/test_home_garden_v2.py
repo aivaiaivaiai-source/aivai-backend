@@ -166,28 +166,51 @@ def test_v2_holiday_l4_parents() -> None:
     assert "home-garden-mebel-dlya-doma-detskaya-mebel" not in L4_PARENT_SLUGS
 
 
+_GOODS_BASE = {"seller_type", "price", "negotiable", "contact_methods"}
+
+
 def test_v2_filter_schemas_representative() -> None:
     safe = {f[0] for f in fields_for_leaf("home-garden-mebel-dlya-doma-seyfy")}
-    assert safe == {"safe_purpose", "lock_type", "condition"}
+    assert safe == {"safe_purpose", "condition"} | _GOODS_BASE
+    assert "lock_type" not in safe
 
     barrel = {f[0] for f in fields_for_leaf("home-garden-emkosti-i-rezervuary-bochki")}
-    assert barrel == {"capacity", "material", "condition"}
+    assert barrel == {"capacity", "condition"} | _GOODS_BASE
+    assert "material" not in barrel
 
     coal = {f[0] for f in fields_for_leaf("home-garden-drova-i-ugol-ugol")}
-    assert "condition" not in coal
+    assert coal == _GOODS_BASE
+    assert "quantity" not in coal
 
     gas = {f[0] for f in fields_for_leaf("home-garden-gazovye-ballony")}
-    assert "gas_cylinder_purpose" in gas
+    assert "gas_cylinder_purpose" not in gas
     assert "capacity" in gas
+    assert "fill_state" in gas
     assert "condition" in gas
+    assert _GOODS_BASE.issubset(gas)
 
     seeds = {f[0] for f in fields_for_leaf("home-garden-semena-i-posadochnyy-material-semena-ovoschey")}
+    assert seeds == _GOODS_BASE
+    assert "plant_name" not in seeds
     assert "condition" not in seeds
+
+    fruit = {
+        f[0]
+        for f in fields_for_leaf(
+            "home-garden-sazhentsy-i-rassada-plodovye-derevya"
+        )
+    }
+    assert fruit == _GOODS_BASE
+    assert "plant_name" not in fruit
+    assert "condition" not in fruit
 
     toshok = {f[0] for f in fields_for_leaf("home-garden-postelnoe-bele-i-pledy-toshoki")}
     mattress = {f[0] for f in fields_for_leaf("home-garden-mebel-dlya-doma-matrasy")}
     assert "sleeping_place_size" not in toshok
     assert "sleeping_place_size" in mattress
+    assert "width_cm" not in mattress
+    assert "material" not in mattress
+    assert _GOODS_BASE.issubset(mattress)
 
     balloons = {
         f[0]
@@ -195,9 +218,91 @@ def test_v2_filter_schemas_representative() -> None:
             "home-garden-tovary-dlya-prazdnikov-vozdushnye-shary-i-aksessuary-vozdushnye-shary"
         )
     }
-    assert "capacity" not in balloons
-    assert "safe_purpose" not in balloons
-    assert "power_type" not in balloons
+    assert balloons == {"condition"} | _GOODS_BASE
+
+
+def test_package_a_simplified_create_contract() -> None:
+    sofa = {f[0]: f for f in fields_for_leaf("home-garden-mebel-dlya-doma-divany")}
+    assert set(sofa) == {"condition", "foldable"} | _GOODS_BASE
+    assert "width_cm" not in sofa
+    assert "height_cm" not in sofa
+    assert "depth_cm" not in sofa
+    assert "material" not in sofa
+    assert sofa["seller_type"][3] is True
+    assert sofa["price"][3] is True
+    assert sofa["contact_methods"][3] is True
+    assert sofa["foldable"][1] == "Раскладной"
+
+    table = {f[0] for f in fields_for_leaf("home-garden-mebel-dlya-doma-stoly")}
+    assert table == {"condition"} | _GOODS_BASE
+
+    dishes = {
+        f[0]
+        for f in fields_for_leaf(
+            "home-garden-posuda-kuhonnye-prinadlezhnosti-tarelki-i-blyuda"
+        )
+    }
+    assert "material" not in dishes
+    assert dishes == {"condition"} | _GOODS_BASE
+
+    plants = {
+        f[0]
+        for f in fields_for_leaf(
+            "home-garden-komnatnye-rasteniya-i-tsvety-orhidei"
+        )
+    }
+    assert "condition" not in plants
+    assert plants == _GOODS_BASE
+
+    greenhouse = {
+        f[0] for f in fields_for_leaf("home-garden-teplitsy-i-parniki-teplitsy")
+    }
+    assert greenhouse == {"condition"} | _GOODS_BASE
+    assert "size" not in greenhouse
+
+    carpet = {f[0] for f in fields_for_leaf("home-garden-tekstil-i-kovry-kovry")}
+    assert carpet == {"condition"} | _GOODS_BASE
+    assert "size" not in carpet
+
+    mower = {
+        f[0]
+        for f in fields_for_leaf("home-garden-sadovaya-tehnika-gazonokosilki")
+    }
+    assert mower == {
+        "condition",
+        "power_type",
+        "self_propelled",
+    } | _GOODS_BASE
+    assert "brand" not in mower
+    assert "power" not in mower
+    assert "cutting_width" not in mower
+
+    cores = __import__(
+        "app.seeds.home_garden_filters", fromlist=["build_home_garden_core_fields"]
+    ).build_home_garden_core_fields()
+    from app.seeds.home_garden_filters import create_field_component
+
+    assert len(cores) == 324
+    dim_keys = {"width_cm", "height_cm", "depth_cm", "length_cm", "diameter_cm"}
+    for slug, fields in cores.items():
+        keys = {f[0] for f in fields}
+        assert _GOODS_BASE.issubset(keys), slug
+        # Required Create fields must be visible goods-base only (no hidden req).
+        for f in fields:
+            if f[3]:
+                assert f[0] in _GOODS_BASE, f"{slug} required {f[0]}"
+            component = create_field_component(f)
+            assert not component.startswith("forbidden"), f"{slug} {f[0]} {component}"
+            assert component != "forbidden_brand", slug
+        specials = keys - _GOODS_BASE
+        # Soft cap: usually ≤2 specials beyond condition; mower/gas may be 3.
+        assert len(specials) <= 3, f"{slug} specials={specials}"
+        if slug.endswith("-divany"):
+            assert specials == {"condition", "foldable"}
+        assert "brand" not in specials, slug
+        assert "size" not in specials, slug
+        assert len(dim_keys & specials) == 0, slug
+        assert "material" not in specials, slug
 
 
 def test_v2_aliases_point_to_active_leaves() -> None:

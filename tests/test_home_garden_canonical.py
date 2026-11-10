@@ -29,9 +29,13 @@ def test_home_garden_unified_furniture_carpets_decor() -> None:
     assert "home-garden-osveschenie-i-elektrika-dlya-doma" not in by_slug
     assert not any("садовый декор" in name.lower() for name in by_slug.values())
     assert not any("праздничн" in name.lower() for name in by_slug.values())
-    assert len(by_slug) == 28
+    assert len(by_slug) == 32
     assert by_slug["home-garden-basseyny-i-tovary-dlya-otdyha"] == "Бассейны и аксессуары"
     assert by_slug["home-garden-sadovye-kacheli-i-gamaki"] == "Садовые качели и гамаки"
+    assert by_slug["home-garden-emkosti-i-rezervuary"] == "Ёмкости и резервуары"
+    assert by_slug["home-garden-drova-i-ugol"] == "Дрова и уголь"
+    assert by_slug["home-garden-gazovye-ballony"] == "Газовые баллоны"
+    assert by_slug["home-garden-tovary-dlya-prazdnikov"] == "Товары для праздников"
 
 
 def test_home_garden_flutter_label_count_matches_skeleton() -> None:
