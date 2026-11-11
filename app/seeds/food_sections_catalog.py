@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Продажа «Продукты и сельхозтовары».
+"""Продажа «Продукты и сельхозтовары» (Food/Agri V2 edible catalog).
 
 Вид — сам продукт. Детские смеси, каши и пюре для прикорма остаются в
 «Детском мире». Сено, комбикорм и живые животные — в «Животных».
 Пчёлы и ульи — там же, мёд — здесь. Пищевое сырьё для производства —
 в сырье. БАДы — в медтоварах.
+Опт / эко / тара — не отдельные L2 (см. food_agri_v2 retired set).
 """
 from __future__ import annotations
 
@@ -46,12 +47,12 @@ def _section(slug: str, label: str, kinds: tuple[str, ...], filters: list[dict[s
     }
 
 
-def _farmer() -> dict[str, Any]:
-    return _group("Продавец", ("Частное лицо", "Фермер", "Магазин"))
-
-
-def _shop() -> dict[str, Any]:
-    return _group("Продавец", ("Частное лицо", "Магазин", "Другой"))
+def _seller() -> dict[str, Any]:
+    """Package A approved Food seller override — one catalog for all sections."""
+    return _group(
+        "Кто продаёт",
+        ("Частное лицо", "Фермер", "Магазин", "Другой"),
+    )
 
 
 FOOD_SECTIONS: dict[str, dict[str, Any]] = {
@@ -73,7 +74,7 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Ягоды",
             "Другие овощи и фрукты",
         ),
-        [_farmer()],
+        [_seller()],
     ),
     "meat": _section(
         "food-agri-myaso-i-myasnaya-produktsiya",
@@ -89,7 +90,7 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Субпродукты",
             "Другое мясо",
         ),
-        [_farmer()],
+        [_seller()],
     ),
     "dairy": _section(
         "food-agri-molochnaya-produktsiya",
@@ -105,25 +106,25 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Чалап",
             "Другая молочная продукция",
         ),
-        [_farmer()],
+        [_seller()],
     ),
     "eggs": _section(
         "food-agri-yaytsa",
         "Яйца",
         ("Куриные яйца", "Перепелиные яйца", "Индюшиные яйца", "Другие яйца"),
-        [_farmer()],
+        [_seller()],
     ),
     "fish": _section(
         "food-agri-ryba-i-moreprodukty",
         "Рыба и морепродукты",
         ("Свежая рыба", "Копчёная рыба", "Солёная рыба", "Морепродукты", "Икра", "Другая рыба"),
-        [_shop()],
+        [_seller()],
     ),
     "honey": _section(
         "food-agri-med-i-produkty-pchelovodstva",
         "Мёд и продукты пчеловодства",
         ("Мёд", "Соты", "Перга", "Прополис", "Пыльца", "Другие продукты пчеловодства"),
-        [_farmer()],
+        [_seller()],
     ),
     "nuts": _section(
         "food-agri-orehi-i-suhofrukty",
@@ -139,13 +140,13 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Финики",
             "Другие орехи и сухофрукты",
         ),
-        [_farmer()],
+        [_seller()],
     ),
     "grains": _section(
         "food-agri-krupy-muka-makaronnye-izdeliya",
         "Крупы, мука/макаронные изделия",
         ("Рис", "Гречка", "Овсянка", "Манка", "Пшено", "Мука", "Макароны", "Лапша", "Другие крупы"),
-        [_shop()],
+        [_seller()],
     ),
     "oils": _section(
         "food-agri-masla-i-zhiry",
@@ -159,43 +160,43 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Сало",
             "Другие масла и жиры",
         ),
-        [_shop()],
+        [_seller()],
     ),
     "spices": _section(
         "food-agri-spetsii-pripravy-i-pryanosti",
         "Специи, приправы и пряности",
         ("Чёрный перец", "Зира", "Лавровый лист", "Смеси приправ", "Соль", "Другие специи"),
-        [_shop()],
+        [_seller()],
     ),
     "grocery": _section(
         "food-agri-bakaleya-i-produkty-pitaniya",
         "Бакалея и продукты питания",
         ("Сахар", "Уксус", "Томатная паста", "Соусы", "Дрожжи", "Крахмал", "Другая бакалея"),
-        [_shop()],
+        [_seller()],
     ),
     "sweets": _section(
         "food-agri-konditerskie-izdeliya-i-sladosti",
         "Кондитерские изделия и сладости",
         ("Шоколад", "Конфеты", "Печенье", "Торты и пирожные", "Варенье", "Халва", "Другие сладости"),
-        [_shop()],
+        [_seller()],
     ),
     "bakery": _section(
         "food-agri-hlebobulochnye-izdeliya",
         "Хлебобулочные изделия",
         ("Хлеб", "Лепёшки", "Самса", "Булочки", "Лаваш", "Другая выпечка"),
-        [_group("Продавец", ("Частное лицо", "Пекарня", "Магазин"))],
+        [_seller()],
     ),
     "snacks": _section(
         "food-agri-sneki-i-zakuski",
         "Снеки и закуски",
         ("Чипсы", "Сухарики", "Семечки", "Курт", "Другие снеки"),
-        [_shop()],
+        [_seller()],
     ),
     "semi": _section(
         "food-agri-polufabrikaty",
         "Полуфабрикаты",
         ("Пельмени", "Вареники", "Котлеты", "Голубцы", "Тесто", "Другие полуфабрикаты"),
-        [_shop()],
+        [_seller()],
     ),
     "frozen": _section(
         "food-agri-zamorozhennye-produkty",
@@ -207,7 +208,7 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Замороженное тесто",
             "Другие замороженные продукты",
         ),
-        [_shop()],
+        [_seller()],
     ),
     "canned": _section(
         "food-agri-konservy-i-solenya",
@@ -220,7 +221,7 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Домашние компоты",
             "Другие консервы",
         ),
-        [_shop()],
+        [_seller()],
     ),
     "sausage": _section(
         "food-agri-kolbasnye-izdeliya-i-delikatesy",
@@ -233,13 +234,13 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Казы",
             "Другие деликатесы",
         ),
-        [_shop()],
+        [_seller()],
     ),
     "ready": _section(
         "food-agri-gotovaya-eda-i-kulinariya",
         "Готовая еда и кулинария",
         ("Плов", "Манты", "Салаты", "Первые блюда", "Вторые блюда", "Другая готовая еда"),
-        [_group("Продавец", ("Частное лицо", "Кафе", "Магазин"))],
+        [_seller()],
     ),
     "tea": _section(
         "food-agri-chay-i-kofe",
@@ -253,7 +254,7 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Какао",
             "Другой чай и кофе",
         ),
-        [_shop()],
+        [_seller()],
     ),
     "drinks": _section(
         "food-agri-napitki",
@@ -269,53 +270,19 @@ FOOD_SECTIONS: dict[str, dict[str, Any]] = {
             "Крепкий алкоголь",
             "Другие напитки",
         ),
-        [_shop()],
+        [_seller()],
     ),
     "crops": _section(
         "food-agri-zerno-i-zernovye-kultury",
         "Зерно и зерновые культуры",
         ("Пшеница", "Ячмень", "Кукуруза", "Овёс", "Подсолнечник", "Нут", "Другое зерно"),
-        [_farmer()],
-    ),
-    "wholesale": _section(
-        "food-agri-optovyy-otdel",
-        "Оптовый отдел",
-        (
-            "Овощи оптом",
-            "Фрукты оптом",
-            "Мясо оптом",
-            "Молочная продукция оптом",
-            "Бакалея оптом",
-            "Напитки оптом",
-            "Другой опт",
-        ),
-        [_group("Продавец", ("Оптовик", "Фермер", "Магазин"))],
-    ),
-    "packaging": _section(
-        "food-agri-tara-upakovka-dlya-produktsii",
-        "Тара/упаковка для продукции",
-        (
-            "Стеклянные банки",
-            "Крышки",
-            "Пластиковые бутылки",
-            "Ящики",
-            "Мешки",
-            "Контейнеры",
-            "Другая тара",
-        ),
-        [_group("Продавец", ("Магазин", "Производитель", "Частное лицо"))],
-    ),
-    "eco": _section(
-        "food-agri-ekoprodukty-i-fermerskie-tovary",
-        "Экопродукты и фермерские товары",
-        ("Фермерские наборы", "Органические наборы", "Другие фермерские товары"),
-        [_farmer()],
+        [_seller()],
     ),
     "other": _section(
         "food-agri-prochie-produkty-i-selhoztovary",
         "Прочие продукты и сельхозтовары",
         ("Пищевой лёд", "Сухое молоко", "Другие продукты"),
-        [_shop()],
+        [_seller()],
     ),
 }
 

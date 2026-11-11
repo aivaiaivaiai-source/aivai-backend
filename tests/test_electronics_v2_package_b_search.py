@@ -83,6 +83,7 @@ def test_electronics_all_19_nonempty_filters() -> None:
 async def test_electronics_search_filters_in_db_and_parity(client) -> None:
     await engine.dispose()
     expected = build_electronics_v2_search_filters()
+    created: list[int] = []
     async with async_session_maker() as session:
         for slug in (
             "electronics-smartfony-i-telefony",
@@ -124,8 +125,6 @@ async def test_electronics_search_filters_in_db_and_parity(client) -> None:
         ).scalar_one()
         phones_id = int(phones.id)
         tablets_id = int(tablets.id)
-
-        created: list[int] = []
 
         async def _add(
             *,
@@ -219,107 +218,126 @@ async def test_electronics_search_filters_in_db_and_parity(client) -> None:
         )
         await session.commit()
 
-    # Apple + iPhone 15 FOUND
-    r = await client.get(
-        "/api/v1/listings",
-        params={
-            "category_slug": "electronics-smartfony-i-telefony",
-            "category_id": phones_id,
-            "attrs": json.dumps(
-                {
-                    "electronics_kind": "Смартфоны",
-                    "electronics_brand": "Apple",
-                    "electronics_model": "iPhone 15",
-                },
-                ensure_ascii=False,
-            ),
-            "facets": "electronics_brand,electronics_model,city",
-            "limit": 20,
-        },
-    )
-    assert r.status_code == 200, r.text
-    body = r.json()
-    titles = {i["title"] for i in body["items"]}
-    assert "PKG-B iPhone 15" in titles
-    assert "PKG-B Galaxy S25" not in titles
-    assert body["total"] >= 1
+    try:
+        # Apple + iPhone 15 FOUND
+        r = await client.get(
+            "/api/v1/listings",
+            params={
+                "category_slug": "electronics-smartfony-i-telefony",
+                "category_id": phones_id,
+                "attrs": json.dumps(
+                    {
+                        "electronics_kind": "Смартфоны",
+                        "electronics_brand": "Apple",
+                        "electronics_model": "iPhone 15",
+                    },
+                    ensure_ascii=False,
+                ),
+                "facets": "electronics_brand,electronics_model,city",
+                "limit": 20,
+            },
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        titles = {i["title"] for i in body["items"]}
+        assert "PKG-B iPhone 15" in titles
+        assert "PKG-B Galaxy S25" not in titles
+        assert body["total"] >= 1
 
-    # Wrong brand NOT FOUND for iPhone query
-    r_bad = await client.get(
-        "/api/v1/listings",
-        params={
-            "category_slug": "electronics-smartfony-i-telefony",
-            "attrs": json.dumps(
-                {
-                    "electronics_brand": "Samsung",
-                    "electronics_model": "iPhone 15",
-                },
-                ensure_ascii=False,
-            ),
-            "limit": 20,
-        },
-    )
-    assert r_bad.status_code == 200
-    bad_titles = {i["title"] for i in r_bad.json()["items"]}
-    assert "PKG-B iPhone 15" not in bad_titles
+        # Wrong brand NOT FOUND for iPhone query
+        r_bad = await client.get(
+            "/api/v1/listings",
+            params={
+                "category_slug": "electronics-smartfony-i-telefony",
+                "attrs": json.dumps(
+                    {
+                        "electronics_brand": "Samsung",
+                        "electronics_model": "iPhone 15",
+                    },
+                    ensure_ascii=False,
+                ),
+                "limit": 20,
+            },
+        )
+        assert r_bad.status_code == 200
+        bad_titles = {i["title"] for i in r_bad.json()["items"]}
+        assert "PKG-B iPhone 15" not in bad_titles
 
-    # Other model FOUND
-    r_om = await client.get(
-        "/api/v1/listings",
-        params={
-            "category_slug": "electronics-smartfony-i-telefony",
-            "attrs": json.dumps(
-                {
-                    "electronics_brand": "Apple",
-                    "electronics_model": OTHER_MODEL_VALUE,
-                },
-                ensure_ascii=False,
-            ),
-            "limit": 20,
-        },
-    )
-    assert "PKG-B other model Apple" in {i["title"] for i in r_om.json()["items"]}
+        # Other model FOUND
+        r_om = await client.get(
+            "/api/v1/listings",
+            params={
+                "category_slug": "electronics-smartfony-i-telefony",
+                "attrs": json.dumps(
+                    {
+                        "electronics_brand": "Apple",
+                        "electronics_model": OTHER_MODEL_VALUE,
+                    },
+                    ensure_ascii=False,
+                ),
+                "limit": 20,
+            },
+        )
+        assert "PKG-B other model Apple" in {
+            i["title"] for i in r_om.json()["items"]
+        }
 
-    # Other brand FOUND
-    r_ob = await client.get(
-        "/api/v1/listings",
-        params={
-            "category_slug": "electronics-smartfony-i-telefony",
-            "attrs": json.dumps(
-                {"electronics_brand": OTHER_BRAND_VALUE},
-                ensure_ascii=False,
-            ),
-            "limit": 20,
-        },
-    )
-    assert "PKG-B other brand phone" in {i["title"] for i in r_ob.json()["items"]}
+        # Other brand FOUND
+        r_ob = await client.get(
+            "/api/v1/listings",
+            params={
+                "category_slug": "electronics-smartfony-i-telefony",
+                "attrs": json.dumps(
+                    {"electronics_brand": OTHER_BRAND_VALUE},
+                    ensure_ascii=False,
+                ),
+                "limit": 20,
+            },
+        )
+        assert "PKG-B other brand phone" in {
+            i["title"] for i in r_ob.json()["items"]
+        }
 
-    # Geo parity
-    r_geo = await client.get(
-        "/api/v1/listings",
-        params={
-            "category_slug": "electronics-smartfony-i-telefony",
-            "city": "Ош",
-            "limit": 20,
-        },
-    )
-    geo_titles = {i["title"] for i in r_geo.json()["items"]}
-    assert "PKG-B Galaxy S25" in geo_titles
-    assert "PKG-B iPhone 15" not in geo_titles
+        # Geo parity
+        r_geo = await client.get(
+            "/api/v1/listings",
+            params={
+                "category_slug": "electronics-smartfony-i-telefony",
+                "city": "Ош",
+                "limit": 20,
+            },
+        )
+        geo_titles = {i["title"] for i in r_geo.json()["items"]}
+        assert "PKG-B Galaxy S25" in geo_titles
+        assert "PKG-B iPhone 15" not in geo_titles
 
-    # Category isolation: phones listing not in tablets
-    r_tab = await client.get(
-        "/api/v1/listings",
-        params={
-            "category_slug": "electronics-planshety-i-elektronnye-knigi",
-            "attrs": json.dumps({"electronics_brand": "Apple"}, ensure_ascii=False),
-            "limit": 20,
-        },
-    )
-    tab_titles = {i["title"] for i in r_tab.json()["items"]}
-    assert "PKG-B iPhone 15" not in tab_titles
-    assert "PKG-B tablet isolation" in tab_titles
+        # Category isolation: phones listing not in tablets
+        r_tab = await client.get(
+            "/api/v1/listings",
+            params={
+                "category_slug": "electronics-planshety-i-elektronnye-knigi",
+                "attrs": json.dumps(
+                    {"electronics_brand": "Apple"}, ensure_ascii=False
+                ),
+                "limit": 20,
+            },
+        )
+        tab_titles = {i["title"] for i in r_tab.json()["items"]}
+        assert "PKG-B iPhone 15" not in tab_titles
+        assert "PKG-B tablet isolation" in tab_titles
 
-    # Facet self-exclusion smoke: facets returned
-    facets = body.get("facets") or {}
-    assert "electronics_brand" in facets or facets == {} or True
+        # Facet self-exclusion smoke: facets returned
+        facets = body.get("facets") or {}
+        assert "electronics_brand" in facets or facets == {} or True
+    finally:
+        if created:
+            async with async_session_maker() as session:
+                await session.execute(
+                    ListingFieldValue.__table__.delete().where(
+                        ListingFieldValue.listing_id.in_(created)
+                    )
+                )
+                await session.execute(
+                    Listing.__table__.delete().where(Listing.id.in_(created))
+                )
+                await session.commit()

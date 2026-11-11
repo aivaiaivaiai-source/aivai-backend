@@ -49,6 +49,10 @@ def _sample_fields(domain: str) -> list:
         from app.seeds.kids_v2 import build_kids_v2_core_fields
 
         return build_kids_v2_core_fields()["kids-detskaya-odezhda"]
+    if domain == "food_agri":
+        from app.seeds.food_agri_v2 import build_food_agri_v2_core_fields
+
+        return build_food_agri_v2_core_fields()["food-agri-ovoschi-i-frukty"]
     if domain == "home_garden":
         from app.seeds.home_garden_filters import build_home_garden_core_fields
 
@@ -138,6 +142,7 @@ def test_cross_domain_contact_methods_one_canonical_contract() -> None:
         "services",
         "kids",
         "car_sale",
+        "food_agri",
     ):
         fields = _sample_fields(domain)
         row = field_row_by_key(fields, "contact_methods")
@@ -157,6 +162,19 @@ def test_goods_domains_seller_negotiable_price_parity() -> None:
                 field_key=key,
                 row=field_row_by_key(fields, key),
             )
+    # Food/Agri: price+negotiable canonical; seller is approved override.
+    food = _sample_fields("food_agri")
+    for key in ("price", "negotiable"):
+        assert_field_matches_canonical(
+            domain="food_agri",
+            field_key=key,
+            row=field_row_by_key(food, key),
+        )
+    assert ("food_agri", "seller_type") in APPROVED_SHARED_FIELD_OVERRIDES
+    seller = extract_choice_values(
+        options_from_field_row(field_row_by_key(food, "seller_type"))
+    )
+    assert seller == ("Частное лицо", "Фермер", "Магазин", "Другой")
 
 
 def test_services_approved_override_not_forced_to_goods_negotiable() -> None:

@@ -80,6 +80,7 @@ GOODS_SHARED_CONTRACT_DOMAINS: tuple[str, ...] = (
     "fashion",
     "electronics",
     "kids",
+    "food_agri",
 )
 
 # contact_methods has no approved domain override among closed goods/services.
@@ -91,6 +92,7 @@ CONTACT_METHODS_PARITY_BUILDERS: tuple[str, ...] = (
     "services",
     "kids",
     "car_sale",
+    "food_agri",
 )
 
 # Explicit product-approved overrides (do not treat as accidental divergence).
@@ -107,6 +109,8 @@ APPROVED_SHARED_FIELD_OVERRIDES: frozenset[tuple[str, str]] = frozenset(
         # Transport car_sale uses vehicle Create base (seller may differ).
         ("car_sale", "seller_type"),
         ("car_sale", "price"),
+        # Products & Agri: seller = Частное лицо/Фермер/Магазин/Другой + label «Кто продаёт».
+        ("food_agri", "seller_type"),
     }
 )
 
