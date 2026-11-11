@@ -1,11 +1,13 @@
 """Newborn goods stay out of sibling Kids World sections."""
 from app.seeds.kids_newborn_catalog import build_newborn_goods_catalog
+from app.seeds.kids_v2 import KIDS_V2_SECTION_CANONICAL_SLUGS
 
 
 def test_newborn_goods_are_products() -> None:
     catalog = build_newborn_goods_catalog()
     kinds = [item["label"] for item in catalog["roles"]]
     filters = {item["label"]: [opt["label"] for opt in item["options"]] for item in catalog["filters"]}
+    assert catalog["category_slug"] == KIDS_V2_SECTION_CANONICAL_SLUGS["newborn"]
     assert catalog["label"] == "Товары для новорождённых"
     assert catalog["question"] == "Какой товар?"
     assert kinds[0] == "Конверты на выписку"

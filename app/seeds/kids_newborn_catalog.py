@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.seeds.kids_v2 import KIDS_V2_SECTION_CANONICAL_SLUGS
+
 
 def _opts(*labels: str) -> list[dict[str, str]]:
     return [{"value": label, "label": label} for label in labels]
@@ -41,7 +43,7 @@ _KINDS = (
 
 def build_newborn_goods_catalog() -> dict[str, Any]:
     return {
-        "category_slug": "kids-tovary-dlya-novorozhdennyh",
+        "category_slug": KIDS_V2_SECTION_CANONICAL_SLUGS["newborn"],
         "label": "Товары для новорождённых",
         "question": "Какой товар?",
         "roles": _opts(*_KINDS),

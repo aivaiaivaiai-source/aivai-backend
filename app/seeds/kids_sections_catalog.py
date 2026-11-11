@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.seeds.kids_newborn_catalog import build_newborn_goods_catalog
+from app.seeds.kids_v2 import KIDS_V2_SECTION_CANONICAL_SLUGS
 
 
 def _opts(*labels: str) -> list[dict[str, str]]:
@@ -79,7 +80,7 @@ _CHILD_AGES = ("До 3 лет", "3-6 лет", "6-12 лет")
 KIDS_SECTIONS: dict[str, dict[str, Any]] = {
     "newborn": build_newborn_goods_catalog(),
     "clothes": _section(
-        "kids-detskaya-odezhda",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["clothes"],
         "Детская одежда",
         (
             "Боди и распашонки",
@@ -88,6 +89,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
             "Платья и юбки",
             "Кофты и свитера",
             "Верхняя одежда",
+            "Школьная форма",
             "Нижнее бельё и пижамы",
             "Головные уборы",
             "Носки и колготки",
@@ -96,13 +98,24 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         [
             _seller(),
             _condition(),
-            _group("Пол", ("Для мальчика", "Для девочки", "Унисекс")),
-            _group("Размер", _CLOTH_SIZES),
-            _group("Сезон", _SEASONS, ("Верхняя одежда", "Головные уборы")),
+            _group(
+                "Размер",
+                _CLOTH_SIZES,
+                (
+                    "Боди и распашонки",
+                    "Ползунки",
+                    "Футболки и рубашки",
+                    "Платья и юбки",
+                    "Кофты и свитера",
+                    "Верхняя одежда",
+                    "Школьная форма",
+                    "Другая детская одежда",
+                ),
+            ),
         ],
     ),
     "shoes": _section(
-        "kids-detskaya-obuv",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["shoes"],
         "Детская обувь",
         (
             "Пинетки",
@@ -133,7 +146,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "strollers": _section(
-        "kids-detskie-kolyaski",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["strollers"],
         "Детские коляски",
         (
             "Коляски 2 в 1",
@@ -165,7 +178,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "seats": _section(
-        "kids-avtokresla-i-perenoski",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["seats"],
         "Автокресла и переноски",
         (
             "Автолюльки",
@@ -194,7 +207,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "food": _section(
-        "kids-detskoe-pitanie",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["food"],
         "Детское питание",
         (
             "Молочные смеси",
@@ -209,7 +222,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "hygiene": _section(
-        "kids-podguzniki-i-gigiena",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["hygiene"],
         "Подгузники и гигиена",
         (
             "Подгузники",
@@ -242,7 +255,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "toys": _section(
-        "kids-igrushki",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["toys"],
         "Игрушки/игры и конструкторы",
         (
             "Погремушки и прорезыватели",
@@ -263,7 +276,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "books": _section(
-        "kids-detskie-knigi",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["books"],
         "Детские книги и развитие",
         (
             "Книги для малышей",
@@ -274,32 +287,10 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         [
             _seller(),
             _condition(),
-            _group("Возраст", ("До 3 лет", "3-6 лет", "6-10 лет", "От 10 лет")),
-        ],
-    ),
-    "school": _section(
-        "kids-tovary-dlya-shkoly",
-        "Товары для школы",
-        (
-            "Школьные рюкзаки",
-            "Школьная форма",
-            "Школьные дневники",
-            "Мешки для сменной обуви",
-            "Другие товары для школы",
-        ),
-        [
-            _seller(),
-            _condition(),
-            _group(
-                "Класс",
-                ("1 класс", "2-4 класс", "5-9 класс", "10-11 класс"),
-                ("Школьная форма", "Школьные дневники"),
-            ),
-            _group("Пол", ("Для мальчика", "Для девочки"), ("Школьная форма",)),
         ],
     ),
     "furniture": _section(
-        "kids-detskaya-mebel",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["furniture"],
         "Детская мебель",
         (
             "Кроватки для малышей",
@@ -323,7 +314,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "transport": _section(
-        "kids-detskiy-transport",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["transport"],
         "Детский транспорт",
         (
             "Детские велосипеды",
@@ -346,7 +337,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "sport": _section(
-        "kids-detskiy-sport",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["sport"],
         "Детский спорт/активный отдых",
         (
             "Качели и горки",
@@ -354,7 +345,6 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
             "Детские мячи",
             "Детские ролики и скейтборды",
             "Детские лыжи и коньки",
-            "Детские бассейны",
             "Другие товары для спорта",
         ),
         [
@@ -364,7 +354,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "safety": _section(
-        "kids-detskaya-bezopasnost",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["safety"],
         "Детская безопасность",
         (
             "Радионяни",
@@ -377,7 +367,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         [_seller(), _condition()],
     ),
     "health": _section(
-        "kids-detskoe-zdorove",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["health"],
         "Детское здоровье и уход",
         (
             "Аспираторы для малышей",
@@ -389,23 +379,9 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ),
         [_seller(), _condition()],
     ),
-    "education": _section(
-        "kids-detskie-sady",
-        "Детские сады и образование",
-        (
-            "Место в детском саду",
-            "Частный детский сад",
-            "Ясли",
-            "Другие образовательные предложения",
-        ),
-        [
-            _group("Форма", ("Государственный", "Частный")),
-            _group("Возраст", ("Ясельная группа", "Младшая группа", "Старшая группа")),
-        ],
-        question="Какое предложение?",
-    ),
+    # Education / kindergartens are SERVICES — not Kids goods (see kids_v2.py).
     "party": _section(
-        "kids-detskie-prazdniki",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["party"],
         "Детские праздники/творчество",
         (
             "Карнавальные костюмы",
@@ -425,7 +401,7 @@ KIDS_SECTIONS: dict[str, dict[str, Any]] = {
         ],
     ),
     "other": _section(
-        "kids-prochie",
+        KIDS_V2_SECTION_CANONICAL_SLUGS["other"],
         "Прочие детские товары",
         (
             "Детские часы",
