@@ -102,3 +102,31 @@ def test_search_allowlist_cannot_equal_unscoped_create_dump() -> None:
     assert "plant_name" not in HOME_GARDEN_SEARCH_KEY_ALLOWLIST
     # Shared vocabulary on Create does not auto-imply every key is a Search filter.
     assert "width_cm" not in HOME_GARDEN_SEARCH_KEY_ALLOWLIST
+
+
+def test_shared_field_equals_shared_contract_invariant() -> None:
+    """SHARED FIELD = SHARED CONTRACT (Global Product Contract).
+
+    Domain schemas must structurally equal the canonical shared goods contract
+    for contact_methods / goods seller / negotiable / price unless an explicit
+    approved override is declared (e.g. Services price semantics).
+    """
+    from app.seeds.shared_goods_create_contract import (
+        CONTACT_METHOD_CHOICES,
+        assert_field_matches_canonical,
+        field_row_by_key,
+    )
+    from app.seeds.kids_v2 import build_kids_v2_core_fields
+    from app.seeds.fashion_v2 import build_fashion_v2_core_fields
+
+    assert len(CONTACT_METHOD_CHOICES) == 6
+    kids = build_kids_v2_core_fields()["kids-detskaya-odezhda"]
+    fashion = build_fashion_v2_core_fields()
+    fashion_fields = fashion[next(iter(fashion))]
+    for domain, fields in (("kids", kids), ("fashion", fashion_fields)):
+        for key in ("seller_type", "price", "negotiable", "contact_methods"):
+            assert_field_matches_canonical(
+                domain=domain,
+                field_key=key,
+                row=field_row_by_key(fields, key),
+            )

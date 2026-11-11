@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from app.models.category_enums import CategoryFieldType, CategoryFilterType
+from app.seeds.shared_goods_create_contract import (
+    CONTACT_METHOD_CHOICES,
+    NEGOTIABLE_CHOICES,
+)
 
 CAR_SALE_SLUG = "transport-car-sale"
 
@@ -48,17 +52,8 @@ _CONDITION = ("Новое", "Отличное", "Хорошее", "Удовле�
 VEHICLE_COLOR_CHOICES = _COLOR
 CONDITION_V2_CHOICES = _CONDITION
 YES_NO_CHOICES = ("Да", "Нет")
-NEGOTIABLE_CHOICES = ("Есть торг", "Без торга")
 EXCHANGE_CHOICES = ("Возможно", "Обмена нет")
 INSTALLMENT_CHOICES = ("Есть", "Нет")
-CONTACT_METHOD_CHOICES = (
-    "Только чат",
-    "Только телефон",
-    "Чат + телефон",
-    "Чат + Wapp",
-    "Телефон + Wapp",
-    "Чат + Тел. + Wapp",
-)
 _YES_NO = YES_NO_CHOICES
 _REGISTRATION = (
     "Кыргызстан",
