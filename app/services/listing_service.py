@@ -209,6 +209,17 @@ class ListingService:
                 price=data.price,
                 fields=data.fields,
             )
+            if (
+                data.category_id is not None
+                and self._field_values is not None
+            ):
+                await self._field_values.assert_required_fields_present(
+                    category_id=data.category_id,
+                    known_fields=known_fields
+                    if known_fields is not None
+                    else data.fields,
+                    create_intent=data.job_intent,
+                )
 
         listing = Listing(
             title=data.title,
@@ -490,6 +501,12 @@ class ListingService:
                 price=listing.price,
                 fields=field_map,
             )
+            if self._field_values is not None:
+                await self._field_values.assert_required_fields_present(
+                    category_id=listing.category_id,
+                    known_fields=field_map,
+                    create_intent=listing.job_intent,
+                )
             from app.services.media_category_processing import (
                 enqueue_category_aware_media_for_listing,
             )

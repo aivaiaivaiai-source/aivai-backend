@@ -132,6 +132,95 @@ async def _attach_real_photo(session, listing_id: int) -> None:
     await session.commit()
 
 
+async def _patch_required_create_fields(
+    client: AsyncClient,
+    session,
+    *,
+    listing_id: int,
+    category_id: int,
+) -> None:
+    """Satisfy activate required-EAV gate without changing Currency V2 assertions."""
+    intel = await client.get(f"/api/v1/categories/intelligence/{category_id}")
+    assert intel.status_code == 200, intel.text
+    fields: dict = {
+        "region": "Чуйская область",
+        "city": "Бишкек",
+        "contact_methods": "Чат + телефон",
+    }
+    brand = (
+        await session.execute(
+            text(
+                """
+                SELECT id, name FROM vehicle_brands
+                WHERE is_enabled IS TRUE
+                ORDER BY id LIMIT 1
+                """
+            )
+        )
+    ).mappings().first()
+    model = None
+    if brand is not None:
+        model = (
+            await session.execute(
+                text(
+                    """
+                    SELECT id, name FROM vehicle_models
+                    WHERE brand_id = :bid
+                    ORDER BY id LIMIT 1
+                    """
+                ),
+                {"bid": brand["id"]},
+            )
+        ).mappings().first()
+    for f in intel.json().get("core_fields") or []:
+        if not f.get("is_required"):
+            continue
+        key = f.get("field_key")
+        if not key or key in ("price", "currency", "price_currency"):
+            continue
+        if key in fields:
+            continue
+        ftype = (f.get("field_type") or "").lower()
+        raw_opts = f.get("options")
+        opts: list = []
+        if isinstance(raw_opts, list):
+            opts = raw_opts
+        elif isinstance(raw_opts, dict):
+            nested = raw_opts.get("choices") or raw_opts.get("options") or []
+            if isinstance(nested, list):
+                opts = nested
+        if ftype in ("brand", "vehicle_brand") and brand is not None:
+            fields[key] = brand["name"]
+            continue
+        if ftype in ("model", "vehicle_model") and model is not None:
+            fields[key] = model["name"]
+            continue
+        if opts:
+            first = opts[0]
+            if isinstance(first, dict):
+                fields[key] = first.get("value") or first.get("label")
+            else:
+                fields[key] = first
+            continue
+        if key == "year":
+            fields[key] = 2020
+        elif key == "mileage":
+            fields[key] = 1
+        elif key == "engine_volume":
+            fields[key] = "2.0"
+        elif key == "city":
+            fields[key] = "Бишкек"
+        elif key == "region":
+            fields[key] = "Чуйская область"
+        else:
+            fields[key] = "1"
+    patched = await client.patch(
+        f"/api/v1/listings/{listing_id}",
+        json={"fields": fields},
+    )
+    assert patched.status_code == 200, patched.text
+
+
 async def _run_db() -> None:
     _auth_user(1)
     async with async_session_maker() as session:
@@ -231,6 +320,9 @@ async def _run_db() -> None:
             assert Decimal(str(draft.json()["price"])) == Decimal("15000")
 
             await _attach_real_photo(session, lid)
+            await _patch_required_create_fields(
+                client, session, listing_id=lid, category_id=car_id
+            )
             act = await client.patch(
                 f"/api/v1/listings/{lid}/status",
                 json={"status": "active"},
@@ -354,6 +446,9 @@ async def _run_db() -> None:
             )
             lid2 = draft2.json()["id"]
             await _attach_real_photo(session, lid2)
+            await _patch_required_create_fields(
+                client, session, listing_id=lid2, category_id=car_id
+            )
             act2 = await client.patch(
                 f"/api/v1/listings/{lid2}/status",
                 json={"status": "active"},
@@ -385,6 +480,9 @@ async def _run_db() -> None:
             assert d_kgs.status_code == 201, d_kgs.text
             lid_k = d_kgs.json()["id"]
             await _attach_real_photo(session, lid_k)
+            await _patch_required_create_fields(
+                client, session, listing_id=lid_k, category_id=parts_id
+            )
             act_k = await client.patch(
                 f"/api/v1/listings/{lid_k}/status",
                 json={"status": "active"},
@@ -395,6 +493,26 @@ async def _run_db() -> None:
 
             # Mixed sort fixtures
             # A: 50000 KGS → norm 50000; B: 1000 USD @89 → would be 89000 but use direct SQL insert
+            # Pre-clean prior incomplete runs so limit=20 cannot hide SortB behind SortA spam.
+            await session.execute(
+                text(
+                    """
+                    DELETE FROM listing_field_values
+                    WHERE listing_id IN (
+                      SELECT id FROM listings WHERE title IN ('SortA', 'SortB')
+                    )
+                    """
+                )
+            )
+            await session.execute(
+                text(
+                    "DELETE FROM media WHERE listing_id IN "
+                    "(SELECT id FROM listings WHERE title IN ('SortA', 'SortB'))"
+                )
+            )
+            await session.execute(
+                text("DELETE FROM listings WHERE title IN ('SortA', 'SortB')")
+            )
             await session.execute(
                 text(
                     """
@@ -562,6 +680,9 @@ async def _run_db() -> None:
             assert d_bike.status_code == 201, d_bike.text
             lid_bike = d_bike.json()["id"]
             await _attach_real_photo(session, lid_bike)
+            await _patch_required_create_fields(
+                client, session, listing_id=lid_bike, category_id=bike_id
+            )
             act_bike = await client.patch(
                 f"/api/v1/listings/{lid_bike}/status",
                 json={"status": "active"},
@@ -594,21 +715,39 @@ async def _run_db() -> None:
                     text("DELETE FROM listings WHERE id = :id"),
                     {"id": cleanup_id},
                 )
+            # SQL-injected sort/threshold fixtures (not API-created IDs above).
             await session.execute(
                 text(
                     """
                     DELETE FROM listing_field_values
                     WHERE listing_id IN (
-                      SELECT id FROM listings WHERE title LIKE 'Thresh%%'
+                      SELECT id FROM listings
+                      WHERE title IN ('SortA', 'SortB', 'ThreshHigh')
+                         OR title LIKE 'Thresh%%'
                     )
                     """
                 )
             )
             await session.execute(
-                text("DELETE FROM media WHERE listing_id IN (SELECT id FROM listings WHERE title LIKE 'Thresh%%')")
+                text(
+                    """
+                    DELETE FROM media
+                    WHERE listing_id IN (
+                      SELECT id FROM listings
+                      WHERE title IN ('SortA', 'SortB', 'ThreshHigh')
+                         OR title LIKE 'Thresh%%'
+                    )
+                    """
+                )
             )
             await session.execute(
-                text("DELETE FROM listings WHERE title LIKE 'Thresh%%'")
+                text(
+                    """
+                    DELETE FROM listings
+                    WHERE title IN ('SortA', 'SortB', 'ThreshHigh')
+                       OR title LIKE 'Thresh%%'
+                    """
+                )
             )
             await session.commit()
 

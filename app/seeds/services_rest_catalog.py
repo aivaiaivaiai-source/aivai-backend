@@ -420,7 +420,15 @@ SERVICE_SECTIONS: dict[str, dict[str, Any]] = {
         "services-prochie-uslugi",
         "Прочие услуги",
         (
-            "Ветеринарные услуги",
+            # Animals vet-services Option B — clinical subtypes (exact).
+            "Осмотр",
+            "Вакцинация",
+            "Стерилизация и кастрация",
+            "Хирургия",
+            "Стационар",
+            "Другие ветеринарные услуги",
+            # Animal care (grooming is care, not clinical veterinary).
+            "Груминг",
             "Уход за животными",
             "Оценка имущества",
             "Другие услуги",

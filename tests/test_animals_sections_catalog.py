@@ -1,62 +1,52 @@
 """Animals sell the animal or the supply, not food or licensed drugs."""
 from app.seeds.animals_sections_catalog import ANIMALS_SECTIONS
+from app.seeds.animals_v2 import (
+    ANIMALS_SELLER_CHOICES,
+    ANIMALS_V2_BANNED_KIND_LABELS,
+    ANIMALS_V2_EXPECTED_L2_COUNT,
+)
 
 
 def test_animals_sections_keep_their_own_goods() -> None:
-    assert len(ANIMALS_SECTIONS) == 16
+    assert len(ANIMALS_SECTIONS) == ANIMALS_V2_EXPECTED_L2_COUNT
+    assert "vetservices" not in ANIMALS_SECTIONS
     seen: dict[str, str] = {}
     for catalog in ANIMALS_SECTIONS.values():
         roles = [item["label"] for item in catalog["roles"]]
-        assert roles[-1].startswith("Друг")
+        assert roles[-1].startswith("Друг") or roles[-1].startswith("Вязка")
         labels = [item["label"] for item in catalog["filters"]]
         assert "Регион" not in labels
         assert "Город" not in labels
+        assert "Порода" not in labels
+        assert "Назначение" not in labels
+        seller = catalog["filters"][0]
+        assert seller["label"] == "Кто продаёт"
+        assert [o["label"] for o in seller["options"]] == list(ANIMALS_SELLER_CHOICES)
         for role in roles:
             assert role not in seen, role
             seen[role] = catalog["label"]
-    assert seen["Алабаи"] == "Собаки"
+    assert seen["Собаки"] == "Собаки"
+    assert seen["Щенки"] == "Собаки"
     assert seen["Пчелосемьи"] == "Пчеловодство"
     assert seen["Инкубационные яйца"] == "Птицеводство"
     assert seen["Сено"] == "Сено, Корма и кормовые добавки"
-    assert seen["Груминг"] == "Ветеринарные услуги"
+    assert "Груминг" not in seen
     assert ANIMALS_SECTIONS["dogs"]["question"] == "Какое животное?"
-    assert ANIMALS_SECTIONS["vetservices"]["question"] == "Какая услуга?"
-    assert ANIMALS_SECTIONS["feed"]["filters"][0]["options"][0]["label"] == "Частное лицо"
-    assert [item["label"] for item in ANIMALS_SECTIONS["feed"]["filters"]] == ["Продавец"]
-    assert [item["label"] for item in ANIMALS_SECTIONS["dogs"]["filters"]] == ["Продавец", "Пол"]
-    assert "Состояние" not in [item["label"] for item in ANIMALS_SECTIONS["dogs"]["filters"]]
+    assert [item["label"] for item in ANIMALS_SECTIONS["dogs"]["filters"]] == [
+        "Кто продаёт",
+        "Пол",
+    ]
+    assert "Состояние" not in [
+        item["label"] for item in ANIMALS_SECTIONS["dogs"]["filters"]
+    ]
     assert [item["label"] for item in ANIMALS_SECTIONS["accessories"]["filters"]] == [
-        "Продавец",
+        "Кто продаёт",
         "Состояние",
     ]
-    vet_sellers = [
-        item["label"] for item in ANIMALS_SECTIONS["vetgoods"]["filters"][0]["options"]
+    assert [item["label"] for item in ANIMALS_SECTIONS["vetgoods"]["filters"]] == [
+        "Кто продаёт"
     ]
-    assert vet_sellers[0] == "Ветаптека"
-    milk = next(
-        item
-        for item in ANIMALS_SECTIONS["sheep"]["filters"]
-        if item["label"] == "Назначение"
-        for item in item["options"]
-        if item["label"] == "Для молока"
-    )
-    assert milk["for_kinds"] == ["Козы"]
-    banned = {
-        "Мёд",
-        "Соты",
-        "Перга",
-        "Прополис",
-        "Пыльца",
-        "Яйца",
-        "Молоко",
-        "Пшеница",
-        "Ячмень",
-        "Ветеринарные услуги",
-        "Уход за животными",
-        "Антибиотики",
-        "Вакцины",
-        "Лекарства",
-        "Таблетки",
-        "Сёдла",
-    }
-    assert banned.isdisjoint(seen)
+    assert [item["label"] for item in ANIMALS_SECTIONS["feed"]["filters"]] == [
+        "Кто продаёт"
+    ]
+    assert ANIMALS_V2_BANNED_KIND_LABELS.isdisjoint(seen)

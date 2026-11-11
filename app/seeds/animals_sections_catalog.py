@@ -3,7 +3,7 @@
 
 Вид — само животное, корм или товар. Мёд, соты и зерно остаются в продуктах.
 Читалки и седла сюда не входят. Лекарства для животных не продаём без лицензии:
-в ветаптеке только уходовые товары. Осмотр и вакцинация — услуга, не препарат.
+в ветаптеке только уходовые товары. Ветеринарные услуги — в Services.
 """
 from __future__ import annotations
 
@@ -32,40 +32,21 @@ def _group(
     return group
 
 
-def _seller(*labels: str) -> dict[str, Any]:
-    return _group("Продавец", _opts(*labels))
-
-
-def _condition(applies_to: tuple[str, ...] | None = None) -> dict[str, Any]:
-    return _group("Состояние", _opts("Новое", "Б/у"), applies_to)
-
-
-_FARM = ("Частное лицо", "Хозяйство", "Компания")
-_PET = ("Частное лицо", "Питомник", "Магазин")
-_SHOP = ("Частное лицо", "Магазин", "Компания")
+# Canonical Animals seller override (Package A) — one catalog for all L2.
+_SELLER = ("Частное лицо", "Хозяйство", "Питомник", "Магазин", "Другой")
 _SEX = _opts("Самец", "Самка")
+_CONDITION = _opts("Новое", "Б/у")
 
+# Live-animal kinds are product/animal types — not breed catalogs (V2).
 _SHEEP = ("Овцы", "Бараны", "Ягнята")
 _GOATS = ("Козы", "Козлы", "Козлята")
-_DOGS = (
-    "Алабаи",
-    "Немецкие овчарки",
-    "Хаски",
-    "Шпицы",
-    "Йоркширские терьеры",
-    "Той-терьеры",
-    "Питбули",
-    "Дворняги",
-)
-_CATS = (
-    "Дворовые",
-    "Британские",
-    "Шотландские",
-    "Сфинксы",
-    "Мейн-куны",
-    "Персидские",
-    "Сиамские",
-)
+_DOGS = ("Собаки", "Щенки", "Другие собаки")
+_CATS = ("Кошки", "Котята", "Другие кошки")
+_RABBITS = ("Кролики", "Декоративные кролики", "Другие кролики")
+
+
+def _seller() -> dict[str, Any]:
+    return _group("Кто продаёт", _opts(*_SELLER))
 
 
 def _section(
@@ -90,64 +71,21 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
         "Овцы, бараны и козы",
         "Какое животное?",
         (*_SHEEP, *_GOATS, "Другие овцы и козы"),
-        [
-            _seller(*_FARM),
-            _group(
-                "Назначение",
-                [
-                    _item("Для разведения"),
-                    _item("На откорм"),
-                    _item("На забой"),
-                    _item("Для молока", ("Козы",)),
-                ],
-            ),
-            _group(
-                "Порода",
-                [
-                    _item("Гиссарские", _SHEEP),
-                    _item("Эдильбаевские", _SHEEP),
-                    _item("Арашан", _SHEEP),
-                    _item("Романовские", _SHEEP),
-                    _item("Зааненские", _GOATS),
-                    _item("Местные"),
-                ],
-            ),
-        ],
+        [_seller()],
     ),
     "cattle": _section(
         "animals-korovy-byki-i-telyata",
         "Коровы, быки и телята",
         "Какое животное?",
         ("Коровы", "Быки", "Тёлки", "Телята", "Другой крупный рогатый скот"),
-        [
-            _seller(*_FARM),
-            _group(
-                "Назначение",
-                [
-                    _item("Для разведения"),
-                    _item("На откорм"),
-                    _item("На забой"),
-                    _item("Для молока", ("Коровы", "Тёлки")),
-                ],
-            ),
-            _group(
-                "Порода",
-                _opts("Голштин", "Швицкая", "Алатауская", "Симментальская", "Местные"),
-            ),
-        ],
+        [_seller()],
     ),
     "horses": _section(
         "animals-loshadi",
         "Лошади",
         "Какое животное?",
         ("Кобылы", "Жеребцы", "Мерины", "Жеребята", "Другие лошади"),
-        [
-            _seller(*_FARM),
-            _group(
-                "Назначение",
-                _opts("Для разведения", "Для работы", "Для верховой езды"),
-            ),
-        ],
+        [_seller()],
     ),
     "poultry": _section(
         "animals-ptitsevodstvo",
@@ -164,54 +102,34 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
             "Перепела",
             "Другая птица",
         ),
-        [
-            _seller(*_FARM),
-            _group(
-                "Назначение",
-                [
-                    _item("Для разведения"),
-                    _item("На забой"),
-                    _item("Для яиц", ("Куры", "Утки", "Гуси", "Индейки", "Перепела")),
-                ],
-            ),
-            _group(
-                "Порода",
-                [
-                    _item("Домашние", ("Куры", "Петухи", "Цыплята")),
-                    _item("Бройлеры", ("Куры", "Петухи", "Цыплята")),
-                    _item("Несушки", ("Куры",)),
-                    _item("Бойцовые", ("Куры", "Петухи")),
-                ],
-                ("Куры", "Петухи", "Цыплята"),
-            ),
-        ],
+        [_seller()],
     ),
     "dogs": _section(
         "animals-sobaki",
         "Собаки",
         "Какое животное?",
-        (*_DOGS, "Вязка собак", "Другие собаки"),
+        (*_DOGS, "Вязка собак"),
         [
-            _seller(*_PET),
-            _group("Пол", _SEX, (*_DOGS, "Другие собаки")),
+            _seller(),
+            _group("Пол", _SEX, _DOGS),
         ],
     ),
     "cats": _section(
         "animals-koshki",
         "Кошки",
         "Какое животное?",
-        (*_CATS, "Вязка кошек", "Другие кошки"),
+        (*_CATS, "Вязка кошек"),
         [
-            _seller(*_PET),
-            _group("Пол", _SEX, (*_CATS, "Другие кошки")),
+            _seller(),
+            _group("Пол", _SEX, _CATS),
         ],
     ),
     "rabbits": _section(
         "animals-kroliki",
         "Кролики",
         "Какое животное?",
-        ("Калифорнийские", "Новозеландские", "Великаны", "Декоративные", "Другие кролики"),
-        [_seller(*_PET), _group("Пол", _SEX)],
+        _RABBITS,
+        [_seller(), _group("Пол", _SEX)],
     ),
     "bees": _section(
         "animals-pchelovodstvo",
@@ -219,8 +137,8 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
         "Что ищете?",
         ("Пчелосемьи", "Пчёлы", "Ульи", "Рамки", "Другое для пчеловодства"),
         [
-            _seller(*_FARM),
-            _condition(("Ульи", "Рамки")),
+            _seller(),
+            _group("Состояние", _CONDITION, ("Ульи", "Рамки")),
         ],
     ),
     "fish": _section(
@@ -235,8 +153,12 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
             "Другие рыбы и аквариумы",
         ),
         [
-            _seller(*_SHOP),
-            _condition(("Аквариумы", "Оборудование для аквариума")),
+            _seller(),
+            _group(
+                "Состояние",
+                _CONDITION,
+                ("Аквариумы", "Оборудование для аквариума"),
+            ),
         ],
     ),
     "rodents": _section(
@@ -252,14 +174,14 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
             "Дегу",
             "Другие грызуны",
         ),
-        [_seller(*_PET), _group("Пол", _SEX)],
+        [_seller(), _group("Пол", _SEX)],
     ),
     "reptiles": _section(
         "animals-reptilii-ekzoticheskie-zhivotnye",
         "Рептилии/экзотические животные",
         "Какое животное?",
         ("Черепахи", "Змеи", "Ящерицы", "Пауки", "Другие экзотические животные"),
-        [_seller(*_PET), _group("Пол", _SEX)],
+        [_seller(), _group("Пол", _SEX)],
     ),
     "feed": _section(
         "animals-seno-korma-i-kormovye-dobavki",
@@ -274,7 +196,7 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
             "Соль-лизунец",
             "Другие корма",
         ),
-        [_seller(*_SHOP)],
+        [_seller()],
     ),
     "accessories": _section(
         "animals-tovary-aksessuary-dlya-zhivotnyh",
@@ -290,7 +212,7 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
             "Игрушки для животных",
             "Другие аксессуары для животных",
         ),
-        [_seller(*_SHOP), _condition()],
+        [_seller(), _group("Состояние", _CONDITION)],
     ),
     "vetgoods": _section(
         "animals-vetapteka-i-veterinarnye-tovary",
@@ -304,42 +226,14 @@ ANIMALS_SECTIONS: dict[str, dict[str, Any]] = {
             "Термометры для животных",
             "Другие ветеринарные товары",
         ),
-        [
-            _seller("Ветаптека", "Частное лицо", "Магазин", "Компания"),
-            _condition(),
-        ],
-    ),
-    "vetservices": _section(
-        "animals-veterinarnye-uslugi",
-        "Ветеринарные услуги",
-        "Какая услуга?",
-        (
-            "Осмотр",
-            "Вакцинация",
-            "Стерилизация и кастрация",
-            "Хирургия",
-            "Стационар",
-            "Груминг",
-            "Другие ветеринарные услуги",
-        ),
-        [
-            _group(
-                "Исполнитель",
-                [
-                    _item("Ветеринар"),
-                    _item("Клиника"),
-                    _item("Грумер", ("Груминг",)),
-                    _item("Компания"),
-                ],
-            ),
-        ],
+        [_seller()],
     ),
     "other": _section(
         "animals-prochie-zhivotnye",
         "Прочие животные",
         "Какое животное?",
         ("Свиньи", "Ослы", "Верблюды", "Другие животные"),
-        [_seller(*_FARM)],
+        [_seller(), _group("Пол", _SEX)],
     ),
 }
 

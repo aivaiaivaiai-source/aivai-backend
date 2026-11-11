@@ -28,6 +28,11 @@ _SKIP_FIELD_KEYS = frozenset(
     {"title", "description", "price", "currency", "price_currency"}
 )
 
+# Requiredness for these lives on listing root / price contract — not EAV rows.
+_REQUIRED_EAV_SKIP_KEYS = frozenset(
+    {"title", "description", "price", "currency", "price_currency"}
+)
+
 # Pinned create-flow geo: may be persisted even when absent from category_core_fields
 # (e.g. Jobs V2 — Region/City are UI-pinned, not schema fields).
 _PINNED_GEO_FIELD_KEYS = frozenset({"city", "region"})
@@ -79,6 +84,86 @@ class ListingFieldValueService:
             definitions=definitions,
         )
         return await self._field_values.replace_for_listing(listing_id, rows)
+
+    async def assert_required_fields_present(
+        self,
+        *,
+        category_id: int,
+        known_fields: dict[str, Any] | None,
+        create_intent: str | None = None,
+    ) -> None:
+        """Block activate/publish when required Create cores are absent from EAV.
+
+        Listing-root companions (`price` / currency) are excluded — validated by
+        the listing price contract. Drafts may omit required cores; callers must
+        invoke this only on the active-publish path.
+        """
+        definitions = await self._load_definitions(
+            category_id,
+            create_intent=create_intent,
+        )
+        payload = {
+            str(k).strip(): v
+            for k, v in (known_fields or {}).items()
+            if k is not None and str(k).strip()
+        }
+        missing: list[str] = []
+        for key, definition in definitions.items():
+            if not definition.is_required:
+                continue
+            if key in _REQUIRED_EAV_SKIP_KEYS:
+                continue
+            raw = payload.get(key)
+            if raw is None or (isinstance(raw, str) and not str(raw).strip()):
+                missing.append(key)
+                continue
+            if definition.field_type == CategoryFieldType.enum:
+                allowed = self._enum_option_values(definition.options)
+                if allowed:
+                    text = str(raw).strip()
+                    parts = [
+                        p.strip()
+                        for p in text.split(_MULTI_SELECT_SEPARATOR)
+                        if p.strip()
+                    ] or [text]
+                    if any(p not in allowed for p in parts):
+                        missing.append(key)
+            elif definition.field_type == CategoryFieldType.multi_select:
+                allowed = self._enum_option_values(definition.options)
+                if allowed:
+                    text = str(raw).strip()
+                    parts = [
+                        p.strip()
+                        for p in text.split(_MULTI_SELECT_SEPARATOR)
+                        if p.strip()
+                    ]
+                    if not parts or any(p not in allowed for p in parts):
+                        missing.append(key)
+        if missing:
+            raise AppException(
+                "Заполните обязательные поля: " + ", ".join(sorted(missing)),
+                status_code=400,
+                code="MISSING_REQUIRED_FIELDS",
+            )
+
+    @staticmethod
+    def _enum_option_values(options: dict | None) -> set[str]:
+        if not options:
+            return set()
+        rows = options.get("choices") or options.get("options") or options.get("values")
+        if not isinstance(rows, list):
+            return set()
+        out: set[str] = set()
+        for row in rows:
+            if isinstance(row, dict):
+                raw = row.get("value")
+                if raw is None:
+                    raw = row.get("label")
+                if raw is not None and str(raw).strip():
+                    out.add(str(raw).strip())
+            elif row is not None and str(row).strip():
+                out.add(str(row).strip())
+        return out
 
     async def _load_definitions(
         self,
