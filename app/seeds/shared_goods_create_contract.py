@@ -82,6 +82,7 @@ GOODS_SHARED_CONTRACT_DOMAINS: tuple[str, ...] = (
     "kids",
     "food_agri",
     "animals",
+    "stationery",
 )
 
 # contact_methods has no approved domain override among closed goods/services.
@@ -95,6 +96,7 @@ CONTACT_METHODS_PARITY_BUILDERS: tuple[str, ...] = (
     "car_sale",
     "food_agri",
     "animals",
+    "stationery",
 )
 
 # Explicit product-approved overrides (do not treat as accidental divergence).

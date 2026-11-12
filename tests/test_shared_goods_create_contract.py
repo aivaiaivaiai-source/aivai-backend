@@ -57,6 +57,12 @@ def _sample_fields(domain: str) -> list:
         from app.seeds.animals_v2 import build_animals_v2_core_fields
 
         return build_animals_v2_core_fields()["animals-sobaki"]
+    if domain == "stationery":
+        from app.seeds.stationery_v2 import build_stationery_v2_core_fields
+
+        return build_stationery_v2_core_fields()[
+            "stationery-books-kantselyarskie-tovary"
+        ]
     if domain == "home_garden":
         from app.seeds.home_garden_filters import build_home_garden_core_fields
 
@@ -148,6 +154,7 @@ def test_cross_domain_contact_methods_one_canonical_contract() -> None:
         "car_sale",
         "food_agri",
         "animals",
+        "stationery",
     ):
         fields = _sample_fields(domain)
         row = field_row_by_key(fields, "contact_methods")
@@ -159,7 +166,7 @@ def test_cross_domain_contact_methods_one_canonical_contract() -> None:
 
 
 def test_goods_domains_seller_negotiable_price_parity() -> None:
-    for domain in ("fashion", "electronics", "kids"):
+    for domain in ("fashion", "electronics", "kids", "stationery"):
         fields = _sample_fields(domain)
         for key in ("seller_type", "price", "negotiable"):
             assert_field_matches_canonical(

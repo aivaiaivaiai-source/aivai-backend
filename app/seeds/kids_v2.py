@@ -86,6 +86,7 @@ KIDS_V2_SECTION_CANONICAL_SLUGS: dict[str, str] = {
 }
 
 # School kinds retired from Kids; ownership vs Stationery (cross-root).
+# Closed by Stationery V2 taxonomy cleanup (diaries/backpacks/shoe bags).
 KIDS_V2_SCHOOL_KIND_OWNERSHIP: dict[str, tuple[str, str, str]] = {
     # kind → (decision, destination_or_gap, reason)
     "Школьная форма": (
@@ -94,24 +95,24 @@ KIDS_V2_SCHOOL_KIND_OWNERSHIP: dict[str, tuple[str, str, str]] = {
         "Child garment — Kids clothing authority, not Stationery",
     ),
     "Школьные дневники": (
-        "GAP",
+        "EXACT_DESTINATION",
         "stationery-books-kantselyarskie-tovary",
-        "Nearest Stationery kind «Ежедневники» — not exact; Archi may expand Stationery",
+        "Canonical Stationery kind «Школьные дневники»",
     ),
     "Школьные рюкзаки": (
-        "GAP",
-        "stationery-books",
-        "No backpack leaf in Stationery — do not invent destination",
+        "EXACT_DESTINATION",
+        "stationery-books-kantselyarskie-tovary",
+        "School-purpose backpack — Stationery, not Fashion/Kids",
     ),
     "Мешки для сменной обуви": (
-        "GAP",
-        "stationery-books",
-        "No shoe-bag leaf in Stationery — do not invent destination",
+        "EXACT_DESTINATION",
+        "stationery-books-kantselyarskie-tovary",
+        "Canonical Stationery kind «Мешки для сменной обуви»",
     ),
     "Другие товары для школы": (
-        "GAP",
+        "NEAREST_DESTINATION",
         "stationery-books-prochie-knigi-i-kantstovary",
-        "Catch-all only; no exact Kids duplicate owner",
+        "No broad school L2; use specific Stationery kinds or Прочие",
     ),
 }
 

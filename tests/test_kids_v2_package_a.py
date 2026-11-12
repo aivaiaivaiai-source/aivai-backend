@@ -96,6 +96,16 @@ def test_kids_v2_school_retired_and_ownership_mapped() -> None:
         "Другие товары для школы",
     }
     assert KIDS_V2_SCHOOL_KIND_OWNERSHIP["Школьная форма"][0] == "MOVED"
+    assert KIDS_V2_SCHOOL_KIND_OWNERSHIP["Школьные дневники"][0] == "EXACT_DESTINATION"
+    assert KIDS_V2_SCHOOL_KIND_OWNERSHIP["Школьные рюкзаки"][0] == "EXACT_DESTINATION"
+    assert (
+        KIDS_V2_SCHOOL_KIND_OWNERSHIP["Мешки для сменной обуви"][0]
+        == "EXACT_DESTINATION"
+    )
+    assert (
+        KIDS_V2_SCHOOL_KIND_OWNERSHIP["Другие товары для школы"][0]
+        == "NEAREST_DESTINATION"
+    )
     clothes = {r["label"] for r in KIDS_SECTIONS["clothes"]["roles"]}
     assert "Школьная форма" in clothes
 

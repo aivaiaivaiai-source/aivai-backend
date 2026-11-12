@@ -554,7 +554,7 @@ MOBILE_CATEGORY_SKELETON: list[tuple[str, str, str, str, int]] = [
     ("stationery-books", "stationery-books-nauchnaya-literatura", "Научная литература", CategoryEntityType.object, 40),
     ("stationery-books", "stationery-books-religioznaya-literatura", "Религиозная литература", CategoryEntityType.object, 50),
     ("stationery-books", "stationery-books-inostrannaya-literatura", "Иностранная литература", CategoryEntityType.object, 60),
-    ("stationery-books", "stationery-books-elektronnye-knigi", "Электронные книги", CategoryEntityType.object, 70),
+    ("stationery-books", "stationery-books-elektronnye-knigi", "Электронные издания", CategoryEntityType.object, 70),
     ("stationery-books", "stationery-books-tovary-dlya-tvorchestva-risovaniya", "Товары для творчества/рисования", CategoryEntityType.object, 80),
     ("stationery-books", "stationery-books-tovary-dlya-ofisa", "Товары для офиса", CategoryEntityType.object, 90),
     ("stationery-books", "stationery-books-globusy-karty", "Глобусы, карты", CategoryEntityType.object, 100),
