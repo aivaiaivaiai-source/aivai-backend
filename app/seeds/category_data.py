@@ -70,10 +70,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
         ("kids-clothes", "Одежда для детей", CategoryEntityType.object),
         ("kids-strollers", "Коляски и автокресла", CategoryEntityType.object),
     ],
-    "medical": [
-        ("medical-devices", "Медицинские приборы", CategoryEntityType.object),
-        ("medical-care", "Средства ухода", CategoryEntityType.object),
-    ],
+    # Medical modern L2 comes from mobile_category_skeleton.
+    # Legacy medical-devices / medical-care soft-retired by Medical V2 cleanup.
+    "medical": [],
     "food-agri": [
         ("food-agri-products", "Продукты питания", CategoryEntityType.food),
         ("food-agri-farm", "Фермерская продукция", CategoryEntityType.food),

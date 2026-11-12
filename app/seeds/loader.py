@@ -102,6 +102,7 @@ from app.seeds.food_agri_v2 import FOOD_AGRI_V2_RETIRED_SLUGS
 from app.seeds.animals_v2 import ANIMALS_V2_RETIRED_SLUGS
 from app.seeds.stationery_v2 import STATIONERY_V2_RETIRED_SLUGS
 from app.seeds.business_equipment_v2 import BUSINESS_EQUIPMENT_V2_RETIRED_SLUGS
+from app.seeds.medical_v2 import MEDICAL_V2_RETIRED_SLUGS
 from app.seeds.repair_v2 import REPAIR_V2_RETIRED_SLUGS
 from app.seeds.services_v2 import SERVICES_V2_RETIRED_SLUGS
 from app.services.category_text import normalize_alias_keys
@@ -124,6 +125,7 @@ _RETIRED_CATEGORY_SLUGS: frozenset[str] = (
     | ANIMALS_V2_RETIRED_SLUGS
     | STATIONERY_V2_RETIRED_SLUGS
     | BUSINESS_EQUIPMENT_V2_RETIRED_SLUGS
+    | MEDICAL_V2_RETIRED_SLUGS
 )
 
 # Alias/model nicknames must never be VehicleBrand.slug.
@@ -165,6 +167,7 @@ class CategorySeedLoader:
         animals_cleanup = await self._seed_animals_v2_taxonomy_cleanup()
         stationery_cleanup = await self._seed_stationery_v2_taxonomy_cleanup()
         business_cleanup = await self._seed_business_equipment_v2_taxonomy_cleanup()
+        medical_cleanup = await self._seed_medical_v2_taxonomy_cleanup()
         await self._retire_jobs_legacy_schemas()
         await self._seed_rules()
         v_stats = await self._seed_vehicles()
@@ -187,6 +190,8 @@ class CategorySeedLoader:
             "business_equipment_v2_canonical_active": business_cleanup[
                 "canonical_active"
             ],
+            "medical_v2_retired": medical_cleanup["retired"],
+            "medical_v2_canonical_active": medical_cleanup["canonical_active"],
             "category_aliases_added": alias_stats["added"],
             "category_aliases_updated": alias_stats["updated"],
             "category_aliases_conflicts": alias_stats["conflicts"],
@@ -674,6 +679,7 @@ class CategorySeedLoader:
         await self._seed_animals_v2_fields()
         await self._seed_stationery_v2_fields()
         await self._seed_business_equipment_v2_fields()
+        await self._seed_medical_v2_fields()
         for cat_slug, fields in OPTIONAL_FIELDS.items():
             if cat_slug in _RETIRED_CATEGORY_SLUGS:
                 continue
@@ -4943,6 +4949,242 @@ class CategorySeedLoader:
 
         await self._session.flush()
         return {"retired": retired_n, "canonical_active": canonical_active}
+
+    async def _seed_medical_v2_taxonomy_cleanup(self) -> dict[str, int]:
+        """Medical V2 — retire legacy dual tree + БАДы; keep 15 modern L2; root label."""
+        from app.seeds.medical_v2 import (
+            MEDICAL_ROOT_LABEL,
+            MEDICAL_ROOT_SLUG,
+            MEDICAL_V2_CANONICAL_LEAVES,
+            MEDICAL_V2_CANONICAL_SLUGS,
+            MEDICAL_V2_ENTITY_TYPE,
+            MEDICAL_V2_RETIRED_SLUGS,
+            medical_v2_assert_cleanup_contracts,
+        )
+
+        medical_v2_assert_cleanup_contracts()
+        root_id = self._slug_to_id.get(MEDICAL_ROOT_SLUG)
+        if root_id is None:
+            return {"retired": 0, "canonical_active": 0}
+
+        root = (
+            await self._session.execute(select(Category).where(Category.id == root_id))
+        ).scalar_one_or_none()
+        if root is None:
+            return {"retired": 0, "canonical_active": 0}
+
+        root.name = MEDICAL_ROOT_LABEL
+        root.is_active = True
+        root.parent_id = None
+        await self._clear_picker_parent_live_sot(root_id)
+
+        retired_n = 0
+        for slug in sorted(MEDICAL_V2_RETIRED_SLUGS):
+            cat_id = self._slug_to_id.get(slug)
+            if cat_id is None:
+                row = (
+                    await self._session.execute(
+                        select(Category).where(Category.slug == slug)
+                    )
+                ).scalar_one_or_none()
+                if row is None:
+                    continue
+                cat_id = row.id
+                self._slug_to_id[slug] = cat_id
+            else:
+                row = (
+                    await self._session.execute(
+                        select(Category).where(Category.id == cat_id)
+                    )
+                ).scalar_one_or_none()
+            if row is None:
+                continue
+            if row.is_active:
+                row.is_active = False
+                retired_n += 1
+            await self._clear_picker_parent_live_sot(cat_id)
+
+        canonical_active = 0
+        for label, slug, sort_order in MEDICAL_V2_CANONICAL_LEAVES:
+            cat_id = self._slug_to_id.get(slug)
+            if cat_id is None:
+                row = (
+                    await self._session.execute(
+                        select(Category).where(Category.slug == slug)
+                    )
+                ).scalar_one_or_none()
+                if row is None:
+                    row = Category(
+                        parent_id=root_id,
+                        slug=slug,
+                        name=label,
+                        entity_type=MEDICAL_V2_ENTITY_TYPE,
+                        is_active=True,
+                        sort_order=sort_order,
+                        requires_city=True,
+                    )
+                    self._session.add(row)
+                    await self._session.flush()
+                cat_id = row.id
+                self._slug_to_id[slug] = cat_id
+            cat = (
+                await self._session.execute(select(Category).where(Category.id == cat_id))
+            ).scalar_one_or_none()
+            if cat is None:
+                continue
+            cat.name = label
+            cat.parent_id = root_id
+            cat.sort_order = sort_order
+            cat.is_active = True
+            cat.entity_type = MEDICAL_V2_ENTITY_TYPE
+            cat.requires_city = True
+            # Do NOT clear cores here — Package A cores are seeded in
+            # `_seed_medical_v2_fields` earlier in `_seed_fields()`.
+            canonical_active += 1
+
+        children = (
+            await self._session.execute(
+                select(Category).where(Category.parent_id == root_id)
+            )
+        ).scalars().all()
+        for ch in children:
+            if ch.slug in MEDICAL_V2_CANONICAL_SLUGS:
+                continue
+            if ch.is_active:
+                ch.is_active = False
+                retired_n += 1
+            await self._clear_picker_parent_live_sot(ch.id)
+
+        await self._session.flush()
+        return {"retired": retired_n, "canonical_active": canonical_active}
+
+    async def _seed_medical_v2_fields(self) -> None:
+        """Medical V2 Package A Create cores + Package B Search filters."""
+        from app.seeds.medical_v2 import (
+            MEDICAL_ROOT_LABEL,
+            MEDICAL_ROOT_SLUG,
+            MEDICAL_V2_CANONICAL_LEAVES,
+            MEDICAL_V2_CANONICAL_SLUGS,
+            MEDICAL_V2_ENTITY_TYPE,
+            MEDICAL_V2_RETIRED_SLUGS,
+            build_medical_v2_core_fields,
+            build_medical_v2_search_filters,
+            medical_v2_assert_package_a_contracts,
+            medical_v2_assert_package_b_contracts,
+        )
+
+        medical_v2_assert_package_a_contracts()
+        medical_v2_assert_package_b_contracts()
+        root_id = self._slug_to_id.get(MEDICAL_ROOT_SLUG)
+        if root_id is None:
+            return
+        root = (
+            await self._session.execute(select(Category).where(Category.id == root_id))
+        ).scalar_one_or_none()
+        if root is None:
+            return
+        root.name = MEDICAL_ROOT_LABEL
+        root.is_active = True
+        root.parent_id = None
+        await self._clear_picker_parent_live_sot(root_id)
+
+        for label, slug, sort_order in MEDICAL_V2_CANONICAL_LEAVES:
+            row = (
+                await self._session.execute(select(Category).where(Category.slug == slug))
+            ).scalar_one_or_none()
+            if row is None:
+                row = Category(
+                    parent_id=root_id,
+                    slug=slug,
+                    name=label,
+                    entity_type=MEDICAL_V2_ENTITY_TYPE,
+                    is_active=True,
+                    sort_order=sort_order,
+                    requires_city=True,
+                )
+                self._session.add(row)
+                await self._session.flush()
+            else:
+                row.parent_id = root_id
+                row.name = label
+                row.entity_type = MEDICAL_V2_ENTITY_TYPE
+                row.is_active = True
+                row.sort_order = sort_order
+                row.requires_city = True
+            self._slug_to_id[slug] = row.id
+
+        await self._session.flush()
+
+        for slug in sorted(MEDICAL_V2_RETIRED_SLUGS):
+            row = (
+                await self._session.execute(select(Category).where(Category.slug == slug))
+            ).scalar_one_or_none()
+            if row is None:
+                continue
+            self._slug_to_id[slug] = row.id
+            if row.is_active:
+                row.is_active = False
+            await self._clear_picker_parent_live_sot(row.id)
+
+        children = (
+            await self._session.execute(
+                select(Category).where(Category.parent_id == root_id)
+            )
+        ).scalars().all()
+        for ch in children:
+            if ch.slug in MEDICAL_V2_CANONICAL_SLUGS:
+                continue
+            if ch.is_active:
+                ch.is_active = False
+            await self._clear_picker_parent_live_sot(ch.id)
+
+        core_by_slug = build_medical_v2_core_fields()
+        filters_by_slug = build_medical_v2_search_filters()
+        for slug, fields in core_by_slug.items():
+            cat_id = self._slug_to_id.get(slug)
+            if cat_id is None:
+                continue
+            for model_cls in (
+                CategoryCoreField,
+                CategoryOptionalField,
+                CategoryFilter,
+            ):
+                existing = (
+                    await self._session.execute(
+                        select(model_cls).where(model_cls.category_id == cat_id)
+                    )
+                ).scalars().all()
+                for row in existing:
+                    await self._session.delete(row)
+            await self._session.flush()
+            for field in fields:
+                key, label, ftype, required, sort, options, hint = field
+                if key in {"city", "title", "description", "photos", "region"}:
+                    continue
+                await self._upsert_core_field(
+                    cat_id,
+                    key,
+                    label,
+                    ftype,
+                    sort,
+                    hint,
+                    required=required,
+                    options=options if options else None,
+                )
+            for key, label, ftype, sort, config in filters_by_slug.get(slug, []):
+                self._session.add(
+                    CategoryFilter(
+                        category_id=cat_id,
+                        filter_key=key,
+                        label=label,
+                        filter_type=ftype,
+                        sort_order=sort,
+                        config=config,
+                        search_intent="",
+                    )
+                )
+
+        await self._session.flush()
 
     async def _seed_business_equipment_v2_fields(self) -> None:
         """Business Equipment V2 Package A Create cores + Package B Search filters."""
