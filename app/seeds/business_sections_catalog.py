@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Продажа «Оборудование для бизнеса».
+"""Продажа «Бизнес-оборудование».
 
 Вид — сама машина или линия. Готовый бизнес остаётся отдельной категорией.
 Бытовые холодильники, принтеры, ИБП и швейные машины для дома — в
 электронике. Генераторы, бетономешалки и сварочные аппараты — в ремонте.
-Фены, лампы для маникюра и кресла барбера как ручной инструмент — в красоте.
-Тара (банки/мешки) retired from Food/Agri — Materials packing L2 nearest GAP.
+Фены, лампы для маникюра — в красоте; кресла/мойки салона — здесь.
+Тара (банки/мешки) — Food Tara GAP / Materials; packing L2 = machines only.
 Тракторы и погрузчики — в транспорте.
+Seller target: Частное лицо / Магазин / Другой (no Компания).
 """
 from __future__ import annotations
 
 from typing import Any
+
+from app.seeds.shared_goods_create_contract import GOODS_SELLER_CHOICES
 
 
 def _item(
@@ -45,7 +48,7 @@ def _group(
 
 
 def _seller() -> dict[str, Any]:
-    return _group("Продавец", ("Частное лицо", "Магазин", "Компания"))
+    return _group("Продавец", GOODS_SELLER_CHOICES)
 
 
 def _condition() -> dict[str, Any]:

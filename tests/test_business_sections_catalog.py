@@ -14,7 +14,13 @@ def test_business_sections_do_not_overlap() -> None:
             seen[role] = catalog["label"]
         labels = [item["label"] for item in catalog["filters"]]
         assert labels == ["Продавец", "Состояние"]
+        sellers = [item["label"] for item in catalog["filters"][0]["options"]]
+        assert sellers == ["Частное лицо", "Магазин", "Другой"]
+        assert "Компания" not in sellers
     assert seen["Экономпанели"] == "Торговое оборудование"
+    assert seen["Плоттеры"] == "Полиграфическое оборудование"
+    assert seen["Компрессоры для СТО"] == "Оборудование для автомоек и СТО"
+    assert "Компрессоры" not in seen
     assert seen["Кассовые боксы"] == "Кассовое и POS-оборудование"
     assert seen["Пароконвектоматы"] == "Оборудование для общепита"
     assert seen["Токарные станки"] == "Производственное оборудование"
