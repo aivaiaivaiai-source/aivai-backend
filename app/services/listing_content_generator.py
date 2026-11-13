@@ -33,6 +33,8 @@ def _category_family(slug: str | None) -> str:
         return "electronics"
     if slug.startswith("fashion-"):
         return "fashion"
+    if slug == "beauty" or (slug and slug.startswith("beauty-")):
+        return "beauty"
     return "general"
 
 
@@ -82,41 +84,58 @@ class ListingContentGenerator:
         memory = _s(known_fields.get("memory"))
 
         family = _category_family(category_slug)
+        beauty_kind = _s(known_fields.get("beauty_kind"))
+
+        def _finish(raw: str) -> str:
+            out = (raw or "")[:120]
+            if family != "beauty":
+                return out
+            from app.services.beauty_ai_medical_claim_guard import (
+                scrub_ai_invented_medical_claims,
+            )
+
+            return scrub_ai_invented_medical_claims(
+                user_seed=seed_text,
+                generated=out,
+            )[:120]
 
         if family == "transport" and (brand or model):
             parts = [p for p in (brand, model, year) if p]
-            return " ".join(parts)[:120]
+            return _finish(" ".join(parts))
 
         if family == "electronics":
             base = seed_text.strip()
             m_mem = _MEMORY_GB.search(seed_text) or _MEMORY_GB.search(normalize_text(seed_text))
             if m_mem and "gb" not in base.lower() and "гб" not in base.lower():
                 base = f"{base} {m_mem.group(1)}GB"
-            return _capitalize_product_name(base)[:120]
+            return _finish(_capitalize_product_name(base))
+
+        if family == "beauty" and beauty_kind:
+            return _finish(beauty_kind)
 
         if family == "animals" and item:
-            return f"Продажа: {item}"[:120]
+            return _finish(f"Продажа: {item}")
 
         if family == "services" and (service or item):
-            return (service or item)[:120]
+            return _finish(service or item or "")
 
         if family == "real_estate":
             rooms = _s(known_fields.get("rooms"))
             deal = _s(known_fields.get("deal_type"))
             if rooms and deal:
-                return f"{rooms}-комн., {deal}"[:120]
+                return _finish(f"{rooms}-комн., {deal}")
             if item:
-                return item[:120]
+                return _finish(item)
 
         if item:
-            return _capitalize_product_name(item)[:120]
+            return _finish(_capitalize_product_name(item))
         if product:
-            return product[:120]
+            return _finish(product)
 
         short_seed = seed_text.strip()
         if len(short_seed) <= 80:
-            return _capitalize_product_name(short_seed)[:120]
-        return "Объявление на AiVai"[:120]
+            return _finish(_capitalize_product_name(short_seed))
+        return _finish("Объявление на AiVai")
 
     @classmethod
     def generate_description(
@@ -203,6 +222,18 @@ class ListingContentGenerator:
                 parts.append(f"Состояние: {cond_hint}.")
             parts.append("Вещь готова к передаче покупателю.")
 
+        elif family == "beauty":
+            # Neutral marketplace wording only — no therapeutic efficacy.
+            subject = (
+                _s(known_fields.get("beauty_kind"))
+                or title
+                or "товар для красоты и ухода"
+            )
+            parts.append(f"Продаётся {subject}.")
+            if cond_hint in {"Новое", "Б/у"}:
+                parts.append(f"Состояние: {cond_hint}.")
+            parts.append("Товар в наличии. Для подробностей напишите или позвоните.")
+
         else:
             parts.append(f"Продаётся {title}.")
             if cond_hint:
@@ -218,6 +249,15 @@ class ListingContentGenerator:
         text = re.sub(r"\s+", " ", text).strip()
         if len(text) > MAX_DESCRIPTION_LENGTH:
             text = text[: MAX_DESCRIPTION_LENGTH - 3].rsplit(" ", 1)[0] + "..."
+        if family == "beauty":
+            from app.services.beauty_ai_medical_claim_guard import (
+                scrub_ai_invented_medical_claims,
+            )
+
+            text = scrub_ai_invented_medical_claims(
+                user_seed=seed_text,
+                generated=text,
+            )
         return text
 
     @classmethod

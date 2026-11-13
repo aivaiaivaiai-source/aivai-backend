@@ -78,10 +78,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
         ("food-agri-farm", "Фермерская продукция", CategoryEntityType.food),
         ("food-agri-feed", "Корма", CategoryEntityType.food),
     ],
-    "beauty": [
-        ("beauty-cosmetics", "Косметика и уход", CategoryEntityType.object),
-        ("beauty-hair", "Волосы и парики", CategoryEntityType.object),
-    ],
+    # Beauty modern L2 come from mobile_category_skeleton + beauty_v2.
+    # Legacy beauty-cosmetics / beauty-hair are soft-retired.
+    "beauty": [],
     "fashion": [
         ("fashion-clothing", "Одежда", CategoryEntityType.object),
         ("fashion-shoes", "Обувь", CategoryEntityType.object),
@@ -313,18 +312,7 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
         ("quantity", "Количество", _CORE.string, None),
         ("price", "Цена", _CORE.price, None),
     ],
-    # --- beauty ---
-    "beauty-cosmetics": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("item_type", "Товар", _CORE.string, "Гель-лак, косметика?"),
-        ("price", "Цена", _CORE.price, None),
-        ("condition", "Состояние", _CORE.enum, "Новое или б/у?"),
-    ],
-    "beauty-hair": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("item_type", "Товар", _CORE.string, "Парик, наращивание?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
+    # --- beauty (legacy free-text cores removed; Package A SoT later) ---
     # --- fashion ---
     "fashion-clothing": [
         ("city", "Город", _CORE.city, "В каком городе?"),
@@ -630,9 +618,10 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "food-agri-products": ["продукты", "еда", "бакалея"],
     "food-agri-farm": ["молоко", "мясо", "курут", "сено", "ферма", "сельхоз", "яйцо", "мед"],
     "food-agri-feed": ["корм", "комбикорм", "силос"],
-    # beauty products
-    "beauty-cosmetics": ["гель-лак", "лак", "косметика", "помада", "крем"],
-    "beauty-hair": ["шампунь", "краска для волос", "парик"],
+    # beauty products (modern L2)
+    "beauty-kosmetika": ["гель-лак", "лак", "косметика", "помада", "крем"],
+    "beauty-uhod-za-volosami": ["шампунь", "краска для волос"],
+    "beauty-prochee-dlya-krasoty-i-uhoda": ["парик"],
     # fashion
     "fashion-clothing": ["платье", "куртка", "джинсы", "одежда", "пуховик"],
     "fashion-shoes": ["кроссовки", "ботинки", "обувь", "туфли"],
@@ -710,7 +699,7 @@ ROUTING_RULES: list[tuple[str, str, str, dict]] = [
         "sell_gel_polish",
         r"прода.*(гель.?лак|лак для ногт|косметик)",
         "beauty products",
-        {"target_category_slug": "beauty-cosmetics"},
+        {"target_category_slug": "beauty-kosmetika"},
     ),
     (
         "sell_coffee_machine",
