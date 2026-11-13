@@ -399,24 +399,7 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
         ("animal_type", "Птица", _CORE.string, "Куры, утки?"),
         ("price", "Цена", _CORE.price, None),
     ],
-    # --- materials ---
-    "materials-textile": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("material_type", "Материал", _CORE.string, "Ткань, футер?"),
-        ("quantity", "Количество", _CORE.string, "Метраж или вес?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
-    "materials-metal": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("material_type", "Металл", _CORE.string, "Что продаёте?"),
-        ("quantity", "Количество", _CORE.string, None),
-        ("price", "Цена", _CORE.price, None),
-    ],
-    "materials-chemical": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("material_type", "Сырьё", _CORE.string, "Что за товар?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
+    # --- materials (legacy triad cores retired; Package A SoT not seeded yet) ---
     # --- ready business ---
     "ready-business-cafe": [
         ("city", "Город", _CORE.city, "В каком городе?"),
@@ -932,7 +915,7 @@ AI_DIALOGUE_HINTS: dict[str, str] = {
     "sports-hobby": "Спорт/хобби: тип инвентаря.",
     "stationery-books": "Книги/канцтовары.",
     "animals": "Животные: тип, возраст, город.",
-    "materials": "Сырьё: материал и количество.",
+    "materials": "Материалы и сырьё для производства: вид сырья.",
     "ready-business": "Готовый бизнес: не путать с оборудованием.",
     "free-exchange": "Бесплатно/обмен/находки: TRUST_AND_SAFETY для документов.",
 }

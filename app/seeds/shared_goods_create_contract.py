@@ -85,6 +85,7 @@ GOODS_SHARED_CONTRACT_DOMAINS: tuple[str, ...] = (
     "stationery",
     "business_equipment",
     "medical",
+    "materials",
 )
 
 # contact_methods has no approved domain override among closed goods/services.
