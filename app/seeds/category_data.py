@@ -87,11 +87,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
         ("fashion-shoes", "Обувь", CategoryEntityType.object),
         ("fashion-accessories", "Аксессуары", CategoryEntityType.object),
     ],
-    "sports-hobby": [
-        ("sports-equipment", "Спортивный инвентарь", CategoryEntityType.object),
-        ("sports-tourism", "Туризм и отдых", CategoryEntityType.object),
-        ("sports-music", "Музыкальные инструменты", CategoryEntityType.object),
-    ],
+    # Sport modern L2 come from mobile_category_skeleton + sport_v2.
+    # Legacy sports-equipment / sports-tourism / sports-music are soft-retired.
+    "sports-hobby": [],
     "stationery-books": [
         ("books-fiction", "Книги", CategoryEntityType.object),
         ("books-study", "Учебники и канцтовары", CategoryEntityType.object),
@@ -347,23 +345,7 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
         ("item_type", "Аксессуар", _CORE.string, "Сумка, часы?"),
         ("price", "Цена", _CORE.price, None),
     ],
-    # --- sports & hobby ---
-    "sports-equipment": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("item_type", "Инвентарь", _CORE.string, "Что продаёте?"),
-        ("price", "Цена", _CORE.price, None),
-        ("condition", "Состояние", _CORE.enum, None),
-    ],
-    "sports-tourism": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("item_type", "Товар", _CORE.string, "Палатка, рюкзак?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
-    "sports-music": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("item_type", "Инструмент", _CORE.string, "Гитара, барабан?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
+    # --- sports & hobby (legacy triad free-text cores retired; Package A SoT later) ---
     # --- books ---
     "books-fiction": [
         ("city", "Город", _CORE.city, "В каком городе?"),

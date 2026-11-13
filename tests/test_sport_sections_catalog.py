@@ -3,7 +3,7 @@ from app.seeds.sport_sections_catalog import SPORT_SECTIONS
 
 
 def test_sport_sections_do_not_steal_other_catalogs() -> None:
-    assert len(SPORT_SECTIONS) == 15
+    assert len(SPORT_SECTIONS) == 13
     seen: dict[str, str] = {}
     for catalog in SPORT_SECTIONS.values():
         roles = [item["label"] for item in catalog["roles"]]
@@ -13,17 +13,28 @@ def test_sport_sections_do_not_steal_other_catalogs() -> None:
         assert labels[0] == "Продавец"
         assert "Регион" not in labels
         assert "Город" not in labels
+        seller = catalog["filters"][0]
+        assert [o["label"] for o in seller["options"]] == [
+            "Частное лицо",
+            "Магазин",
+            "Другой",
+        ]
         for role in roles:
             assert role not in seen, role
             seen[role] = catalog["label"]
     assert seen["Мячи"] == "Спортивные товары"
     assert seen["Беговые дорожки"] == "Фитнес и тренажёры"
     assert seen["Протеин"] == "Спортивное питание"
-    assert seen["Комуз"] == "Кыргызские музык.ные инст.менты"
-    assert seen["Шырдаки"] == "Шырдаки и изделия из войлока"
+    assert seen["Эхолоты"] == "Охота и рыбалка"
+    assert seen["Комуз"] == "Кыргызские музыкальные инструменты"
     assert seen["Сёдла"] == "Конный спорт и верховая езда"
     assert seen["Тогуз коргоол"] == "Настольные игры"
-    assert [item["label"] for item in SPORT_SECTIONS["nutrition"]["filters"]] == ["Продавец"]
+    assert "Шырдаки" not in seen
+    assert "Юрты" not in seen
+    assert "Охотничьи ножи" not in seen
+    assert [item["label"] for item in SPORT_SECTIONS["nutrition"]["filters"]] == [
+        "Продавец"
+    ]
     assert "Состояние" in [item["label"] for item in SPORT_SECTIONS["sport"]["filters"]]
     banned = {
         "Велосипеды",
@@ -64,5 +75,8 @@ def test_sport_sections_do_not_steal_other_catalogs() -> None:
         "Конструкторы",
         "Редкие книги",
         "Комиксы",
+        "Охотничьи ножи",
+        "Юрты",
+        "Шырдаки",
     }
     assert banned.isdisjoint(seen)

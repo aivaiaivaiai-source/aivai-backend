@@ -75,6 +75,10 @@ def _sample_fields(domain: str) -> list:
         from app.seeds.medical_v2 import build_medical_v2_core_fields
 
         return build_medical_v2_core_fields()["medical-meditsinskie-pribory"]
+    if domain == "sport":
+        from app.seeds.sport_v2 import build_sport_v2_core_fields
+
+        return build_sport_v2_core_fields()["sports-hobby-sportivnye-tovary"]
     if domain == "home_garden":
         from app.seeds.home_garden_filters import build_home_garden_core_fields
 
@@ -169,6 +173,7 @@ def test_cross_domain_contact_methods_one_canonical_contract() -> None:
         "stationery",
         "business_equipment",
         "medical",
+        "sport",
     ):
         fields = _sample_fields(domain)
         row = field_row_by_key(fields, "contact_methods")
@@ -187,6 +192,7 @@ def test_goods_domains_seller_negotiable_price_parity() -> None:
         "stationery",
         "business_equipment",
         "medical",
+        "sport",
     ):
         fields = _sample_fields(domain)
         for key in ("seller_type", "price", "negotiable"):
