@@ -106,12 +106,9 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
         ("materials-metal", "Металл и прокат", CategoryEntityType.raw_material),
         ("materials-chemical", "Химия и сырьё", CategoryEntityType.raw_material),
     ],
-    "ready-business": [
-        ("ready-business-cafe", "Кафе и общепит", CategoryEntityType.business),
-        ("ready-business-retail", "Магазин и торговля", CategoryEntityType.business),
-        ("ready-business-online", "Онлайн-бизнес", CategoryEntityType.business),
-        ("ready-business-franchise", "Франшизы", CategoryEntityType.business),
-    ],
+    # Ready Business modern L2 come from mobile_category_skeleton + ready_business_v2.
+    # Legacy cafe/retail/online/franchise L2 are soft-retired (not recreated here).
+    "ready-business": [],
     "free-exchange": [
         ("free-give", "Отдам бесплатно", CategoryEntityType.general),
         ("free-exchange-swap", "Обмен", CategoryEntityType.general),
@@ -400,30 +397,7 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
         ("price", "Цена", _CORE.price, None),
     ],
     # --- materials (legacy triad cores retired; Package A SoT not seeded yet) ---
-    # --- ready business ---
-    "ready-business-cafe": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("business_type", "Бизнес", _CORE.string, "Кофейня, ресторан?"),
-        ("operating_period", "Срок работы", _CORE.string, "Сколько работает?"),
-        ("included_assets", "Активы", _CORE.string, "Что входит?"),
-        ("price", "Цена", _CORE.price, "Цена продажи?"),
-    ],
-    "ready-business-retail": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("business_type", "Бизнес", _CORE.string, "Магазин, пункт?"),
-        ("operating_period", "Срок", _CORE.string, None),
-        ("price", "Цена", _CORE.price, None),
-    ],
-    "ready-business-online": [
-        ("city", "Город", _CORE.city, "Город регистрации?"),
-        ("business_type", "Онлайн-бизнес", _CORE.string, "Ниша?"),
-        ("price", "Цена", _CORE.price, None),
-    ],
-    "ready-business-franchise": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("business_type", "Франшиза", _CORE.string, "Какая франшиза?"),
-        ("price", "Цена", _CORE.price, "Паушальный взнос?"),
-    ],
+    # --- ready business (legacy free-text cores retired; Package A SoT not seeded yet) ---
     # --- free / exchange / found ---
     "free-give": [
         ("city", "Город", _CORE.city, "В каком городе?"),
@@ -463,10 +437,6 @@ OPTIONAL_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType]]] = {
     "food-agri-farm": [
         ("organic", "Органика", _CORE.boolean),
         ("delivery", "Доставка", _CORE.boolean),
-    ],
-    "ready-business-cafe": [
-        ("revenue", "Выручка", _CORE.price),
-        ("staff_count", "Персонал", _CORE.number),
     ],
     "animals-pets": [
         ("vaccinated", "Прививки", _CORE.boolean),
@@ -770,7 +740,7 @@ ROUTING_RULES: list[tuple[str, str, str, dict]] = [
         "sell_coffee_shop",
         r"прода.*(кофейн|кафе|ресторан|бар\b)",
         "ready business cafe",
-        {"target_category_slug": "ready-business-cafe"},
+        {"target_category_slug": "ready-business-kafe-restorany-i-obschepit"},
     ),
     (
         "sell_fabric",

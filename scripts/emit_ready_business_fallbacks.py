@@ -1,62 +1,46 @@
 # -*- coding: utf-8 -*-
-"""Write Dart fallbacks for ready business sections."""
+"""Emit Flutter ReadyBusinessSectionFallbacks from Backend V2 catalog."""
+from __future__ import annotations
+
 from pathlib import Path
 
 from app.seeds.ready_business_sections_catalog import READY_BUSINESS_SECTIONS
 
+ROOT = Path(__file__).resolve().parents[2] / "aivai_mobile"
+OUT = (
+    ROOT
+    / "lib"
+    / "features"
+    / "listings"
+    / "data"
+    / "ready_business_section_fallbacks.dart"
+)
 
-def dart_str(value: str) -> str:
-    return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+def _opt(o: dict) -> str:
+    return f"('{o['label']}', null, null)"
 
 
-def dart_list(items: list[str]) -> str:
-    return "[" + ", ".join(dart_str(item) for item in items) + "]"
+def _group(g: dict) -> str:
+    opts = ", ".join(_opt(o) for o in g["options"])
+    return f"('{g['label']}', null, null, [{opts}])"
 
 
-lines = [
-    "/// Offline copies of ready business sections.",
-    "abstract final class ReadyBusinessSectionFallbacks {",
-    "  static const sections = <String, (String, String, List<String>, List<(String, String?, List<String>?, List<(String, String?, List<String>?)>)>)>{",
-]
-for key, catalog in READY_BUSINESS_SECTIONS.items():
-    kinds = [item["label"] for item in catalog["roles"]]
-    filters = []
-    for group in catalog["filters"]:
-        options = []
-        for opt in group["options"]:
-            parent = "null" if not opt.get("parent") else dart_str(opt["parent"])
-            for_kinds = opt.get("for_kinds")
-            kinds_dart = "null" if not for_kinds else dart_list(list(for_kinds))
-            options.append("(" + dart_str(opt["label"]) + ", " + parent + ", " + kinds_dart + ")")
-        applies = group.get("applies_to")
-        applies_dart = "null" if not applies else dart_list(list(applies))
-        depends = "null" if not group.get("depends_on") else dart_str(group["depends_on"])
-        filters.append(
-            "("
-            + dart_str(group["label"])
-            + ", "
-            + depends
-            + ", "
-            + applies_dart
-            + ", ["
-            + ", ".join(options)
-            + "])"
+def main() -> None:
+    lines = [
+        "/// Offline copies of ready business sections.",
+        "abstract final class ReadyBusinessSectionFallbacks {",
+        "  static const sections = <String, (String, String, List<String>, List<(String, String?, List<String>?, List<(String, String?, List<String>?)>)>)>{",
+    ]
+    for key, cat in READY_BUSINESS_SECTIONS.items():
+        kinds = ", ".join(f"'{r['label']}'" for r in cat["roles"])
+        filters = ", ".join(_group(g) for g in cat["filters"])
+        label = cat["label"]
+        q = cat["question"]
+        lines.append(
+            f"    '{label}': ('{key}', '{q}', [{kinds}], [{filters}]),"
         )
-    lines.append(
-        "    "
-        + dart_str(catalog["label"])
-        + ": ("
-        + dart_str(key)
-        + ", "
-        + dart_str(catalog["question"])
-        + ", "
-        + dart_list(kinds)
-        + ", ["
-        + ", ".join(filters)
-        + "]),"
-    )
-lines.extend(
-    [
+    lines += [
         "  };",
         "",
         "  static String? keyForLabel(String label) => sections[label]?.$1;",
@@ -72,9 +56,9 @@ lines.extend(
         "}",
         "",
     ]
-)
-target = Path(
-    r"c:\Users\user\Desktop\AIVAI_PROJECT\aivai_mobile\lib\features\listings\data\ready_business_section_fallbacks.dart"
-)
-target.write_text("\n".join(lines), encoding="utf-8")
-print("wrote", target.stat().st_size)
+    OUT.write_text("\n".join(lines), encoding="utf-8")
+    print(f"Wrote {OUT}")
+
+
+if __name__ == "__main__":
+    main()
