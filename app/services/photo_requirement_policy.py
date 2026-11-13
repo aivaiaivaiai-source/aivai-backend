@@ -9,7 +9,6 @@ from app.services.image_moderation_service import publish_block_reason_for_image
 PLACEHOLDER_ALLOWED_ROOTS: frozenset[str] = frozenset({
     "jobs",
     "services",
-    "free-exchange",
     "ready-business",
 })
 

@@ -163,9 +163,7 @@ def action_compatibility_adjustment(
     if intent.action == IntentAction.RENT_WANTED and "transport-rental" in slug:
         score += 0.04
 
-    if intent.action == IntentAction.EXCHANGE and slug == "free-exchange-swap":
-        score += 0.12
-        tag = tag or "compatible:exchange"
+    # free-exchange-swap retired — no EXCHANGE compatibility boost.
 
     return max(0.0, min(0.99, score)), tag
 

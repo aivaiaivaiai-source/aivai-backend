@@ -548,13 +548,8 @@ class CategoryResolverEngine:
 
                 roots.append("transport")
 
-        elif intent.action == IntentAction.EXCHANGE:
-
-            roots.append("free-exchange-swap")
-
-        elif intent.action == IntentAction.GIVE_AWAY:
-
-            roots.append("free-give")
+        # EXCHANGE / GIVE_AWAY: free-exchange root retired — no destination category.
+        # Do not resurrect free-give / free-exchange-swap into active resolution.
 
         return tuple(s for s in roots if s in catalog.nodes_by_slug)
 

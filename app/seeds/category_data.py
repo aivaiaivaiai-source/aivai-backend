@@ -28,7 +28,7 @@ ROOT_CATEGORIES: list[tuple[str, str, CategoryEntityType, int]] = [
     ("animals", "Животные", CategoryEntityType.animal, 160),
     ("materials", "Материалы, сырьё и товары для производства", CategoryEntityType.raw_material, 170),
     ("ready-business", "Готовый бизнес и франшизы", CategoryEntityType.business, 180),
-    ("free-exchange", "Отдам бесплатно, обмен и находки", CategoryEntityType.general, 190),
+    # free-exchange retired (user/Archi): not an AiVai category — see free_exchange_retirement.py
 ]
 
 SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
@@ -106,11 +106,7 @@ SUBCATEGORIES: dict[str, list[tuple[str, str, CategoryEntityType]]] = {
     # Ready Business modern L2 come from mobile_category_skeleton + ready_business_v2.
     # Legacy cafe/retail/online/franchise L2 are soft-retired (not recreated here).
     "ready-business": [],
-    "free-exchange": [
-        ("free-give", "Отдам бесплатно", CategoryEntityType.general),
-        ("free-exchange-swap", "Обмен", CategoryEntityType.general),
-        ("free-found", "Находки", CategoryEntityType.general),
-    ],
+    # free-exchange subtree soft-retired — not re-seeded as active SoT.
 }
 
 # field_key, label, field_type, ai_hint (None = skip dialogue hint)
@@ -368,26 +364,7 @@ CORE_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType, str | None]]] = {
     ],
     # --- materials (legacy triad cores retired; Package A SoT not seeded yet) ---
     # --- ready business (legacy free-text cores retired; Package A SoT not seeded yet) ---
-    # --- free / exchange / found ---
-    "free-give": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("district", "Район", _CORE.string, "Район или ориентир?"),
-        ("announcement_type", "Тип", _CORE.enum, "Отдам бесплатно?"),
-        ("item_type", "Вещь", _CORE.string, "Что отдаёте?"),
-        ("condition", "Состояние", _CORE.string, "Состояние?"),
-    ],
-    "free-exchange-swap": [
-        ("city", "Город", _CORE.city, "В каком городе?"),
-        ("announcement_type", "Обмен", _CORE.string, "На что меняете?"),
-        ("item_type", "Вещь", _CORE.string, "Что предлагаете?"),
-    ],
-    "free-found": [
-        ("city", "Город", _CORE.city, "Где нашли?"),
-        ("district", "Район", _CORE.string, "Район или место?"),
-        ("announcement_type", "Находка", _CORE.enum, "Что нашли?"),
-        ("item_type", "Предмет", _CORE.string, "Опишите находку"),
-        ("condition", "Статус", _CORE.string, "Сдано в полицию?"),
-    ],
+    # --- free / exchange / found Create cores removed (root retired) ---
 }
 
 OPTIONAL_FIELDS: dict[str, list[tuple[str, str, CategoryFieldType]]] = {
@@ -646,10 +623,7 @@ CATEGORY_ALIASES: dict[str, list[str]] = {
     "ready-business-retail": ["магазин", "продам бизнес", "торговая точка"],
     "ready-business-online": ["интернет магазин", "онлайн бизнес", "маркетплейс"],
     "ready-business-franchise": ["франшиза", "франчайзинг"],
-    # free exchange
-    "free-give": ["отдам", "бесплатно", "даром", "отдам даром"],
-    "free-exchange-swap": ["обмен", "меняю", "обменяю"],
-    "free-found": ["нашел", "нашла", "находка", "потерял", "потеряла"],
+    # free-exchange aliases removed — retired root must not resolve in production.
 }
 
 ROUTING_RULES: list[tuple[str, str, str, dict]] = [
@@ -724,18 +698,6 @@ ROUTING_RULES: list[tuple[str, str, str, dict]] = [
         r"прода.*(платье|юбк|куртк|пуховик)",
         "clothing sale",
         {"target_category_slug": "fashion-clothing"},
-    ),
-    (
-        "free_sofa",
-        r"отдам.*(диван|шкаф|холодильник|вещ)",
-        "free give",
-        {"target_category_slug": "free-give"},
-    ),
-    (
-        "found_documents",
-        r"наш[её]л.*(паспорт|удостоверен|карт|права|id\b)",
-        "found items trust",
-        {"target_category_slug": "free-found"},
     ),
 ]
 
@@ -858,7 +820,6 @@ AI_DIALOGUE_HINTS: dict[str, str] = {
     "animals": "Животные: тип, возраст, город.",
     "materials": "Материалы и сырьё для производства: вид сырья.",
     "ready-business": "Готовый бизнес: не путать с оборудованием.",
-    "free-exchange": "Бесплатно/обмен/находки: TRUST_AND_SAFETY для документов.",
 }
 
 

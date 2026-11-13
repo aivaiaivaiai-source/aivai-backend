@@ -129,10 +129,7 @@ def intent_slug_hints(intent: IntentSemantics) -> tuple[str, ...]:
             hints.append("transport-rental-gruzovoy-transport")
         if "квартира" not in intent.subject_terms:
             hints.append("transport-rental")
-    elif intent.action == IntentAction.EXCHANGE:
-        hints.append("free-exchange-swap")
-    elif intent.action == IntentAction.GIVE_AWAY:
-        hints.append("free-give")
+    # EXCHANGE / GIVE_AWAY: free-exchange retired — no category hints.
 
     if "экскаватор" in intent.subject_terms:
         for slug in _excavator_slugs(intent):

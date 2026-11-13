@@ -108,6 +108,7 @@ from app.seeds.ready_business_v2 import READY_BUSINESS_V2_RETIRED_SLUGS
 from app.seeds.repair_v2 import REPAIR_V2_RETIRED_SLUGS
 from app.seeds.services_v2 import SERVICES_V2_RETIRED_SLUGS
 from app.seeds.beauty_v2 import BEAUTY_V2_RETIRED_SLUGS
+from app.seeds.free_exchange_retirement import FREE_EXCHANGE_RETIRED_SLUGS
 from app.services.category_text import normalize_alias_keys
 
 logger = logging.getLogger(__name__)
@@ -131,6 +132,8 @@ _RETIRED_CATEGORY_SLUGS: frozenset[str] = (
     | MEDICAL_V2_RETIRED_SLUGS
     | MATERIALS_V2_RETIRED_SLUGS
     | READY_BUSINESS_V2_RETIRED_SLUGS
+    | BEAUTY_V2_RETIRED_SLUGS
+    | FREE_EXCHANGE_RETIRED_SLUGS
 )
 
 # Alias/model nicknames must never be VehicleBrand.slug.
@@ -177,6 +180,7 @@ class CategorySeedLoader:
         ready_business_cleanup = await self._seed_ready_business_v2_taxonomy_cleanup()
         sport_cleanup = await self._seed_sport_hobby_v2_taxonomy_cleanup()
         beauty_cleanup = await self._seed_beauty_v2_taxonomy_cleanup()
+        free_exchange_cleanup = await self._seed_free_exchange_retirement()
         await self._retire_jobs_legacy_schemas()
         await self._seed_rules()
         v_stats = await self._seed_vehicles()
@@ -211,6 +215,8 @@ class CategorySeedLoader:
             "sport_hobby_v2_canonical_active": sport_cleanup["canonical_active"],
             "beauty_v2_retired": beauty_cleanup["retired"],
             "beauty_v2_canonical_active": beauty_cleanup["canonical_active"],
+            "free_exchange_retired": free_exchange_cleanup["retired"],
+            "free_exchange_inactive": free_exchange_cleanup["inactive"],
             "category_aliases_added": alias_stats["added"],
             "category_aliases_updated": alias_stats["updated"],
             "category_aliases_conflicts": alias_stats["conflicts"],
@@ -5296,6 +5302,90 @@ class CategorySeedLoader:
 
         await self._session.flush()
         return {"retired": retired_n, "canonical_active": canonical_active}
+
+    async def _seed_free_exchange_retirement(self) -> dict[str, int]:
+        """Soft-retire free-exchange root + descendants; no Create/Search SoT."""
+        from app.models.category_enums import CategoryEntityType
+        from app.seeds.free_exchange_retirement import (
+            FREE_EXCHANGE_RETIRED_META,
+            FREE_EXCHANGE_RETIRED_SLUGS,
+            FREE_EXCHANGE_ROOT_SLUG,
+            free_exchange_assert_retirement_contracts,
+        )
+
+        free_exchange_assert_retirement_contracts()
+        retired_n = 0
+        inactive_n = 0
+
+        # Ensure historical rows exist (inactive) for fresh↔live parity.
+        for slug, name, parent_slug in FREE_EXCHANGE_RETIRED_META:
+            parent_id = None
+            if parent_slug is not None:
+                parent_id = self._slug_to_id.get(parent_slug)
+            existing = (
+                await self._session.execute(select(Category).where(Category.slug == slug))
+            ).scalar_one_or_none()
+            if existing is None:
+                row = Category(
+                    slug=slug,
+                    name=name,
+                    entity_type=CategoryEntityType.general,
+                    sort_order=190 if slug == FREE_EXCHANGE_ROOT_SLUG else 0,
+                    parent_id=parent_id,
+                    is_active=False,
+                    requires_city=True,
+                    ai_dialogue_hint=None,
+                )
+                self._session.add(row)
+                await self._session.flush()
+                self._slug_to_id[slug] = row.id
+                retired_n += 1
+            else:
+                self._slug_to_id[slug] = existing.id
+                if existing.is_active:
+                    existing.is_active = False
+                    retired_n += 1
+                existing.name = name
+                if parent_slug is None:
+                    existing.parent_id = None
+                elif parent_id is not None:
+                    existing.parent_id = parent_id
+                await self._clear_picker_parent_live_sot(existing.id)
+                # Clear aliases so production resolution cannot resurrect UI.
+                alias_rows = (
+                    await self._session.execute(
+                        select(CategoryAlias).where(
+                            CategoryAlias.category_id == existing.id
+                        )
+                    )
+                ).scalars().all()
+                for alias in alias_rows:
+                    await self._session.delete(alias)
+
+        for slug in sorted(FREE_EXCHANGE_RETIRED_SLUGS):
+            cat_id = self._slug_to_id.get(slug)
+            if cat_id is None:
+                continue
+            row = (
+                await self._session.execute(select(Category).where(Category.id == cat_id))
+            ).scalar_one_or_none()
+            if row is not None and not row.is_active:
+                inactive_n += 1
+
+        # Keep retired routing rules inactive (do not resurrect via seed).
+        from app.models.category_rule import CategoryRule
+
+        for rule_name in ("free_sofa", "found_documents"):
+            rule = (
+                await self._session.execute(
+                    select(CategoryRule).where(CategoryRule.name == rule_name)
+                )
+            ).scalar_one_or_none()
+            if rule is not None and rule.is_active:
+                rule.is_active = False
+
+        await self._session.flush()
+        return {"retired": retired_n, "inactive": inactive_n}
 
     async def _seed_beauty_v2_taxonomy_cleanup(self) -> dict[str, int]:
         """Beauty V2 — retire legacy dual tree; keep 16 modern L2 active."""
